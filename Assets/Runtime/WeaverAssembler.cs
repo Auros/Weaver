@@ -34,8 +34,6 @@ namespace Weaver
             // Generate every snapshot from each commit
             for (int i = 0; i < Snapshots.Length; i++)
                 Snapshots[i] = GenerateSnapshotFromCommit(commits[i], ref startTime, ref endTime);
-
-            _ = Snapshots;
         }
 
         private static WeaverSnapshot GenerateSnapshotFromCommit(Commit commit, ref long startTime, ref long endTime)

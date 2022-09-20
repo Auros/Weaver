@@ -1,6 +1,4 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
+using System.Diagnostics;
 using UnityEngine;
 
 namespace Weaver
@@ -9,7 +7,12 @@ namespace Weaver
     {
         private void Start()
         {
+            var sw = Stopwatch.StartNew();
             WeaverAssembler assembler = new(@"P:\Development\Beat Saber\Mods\SiraUtil\.git");
+            sw.Stop();
+            
+            print(sw.ElapsedMilliseconds + "ms");
+            
         }
     }
 }

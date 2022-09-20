@@ -1,0 +1,21 @@
+{
+    "name": "Weaver",
+    "rootNamespace": "Weaver",
+    "references": [
+        "GUID:d5481c2a36861054a899ef5824f23fe5",
+        "GUID:52b971cf5e4eb4146aaeddb7e4b964c8",
+        "GUID:f51ebe6a0ceec4240a699833d6309b23",
+        "GUID:b0214a6008ed146ff8f122a6a9c2f6cc",
+        "GUID:08b38f39e2d9e594389b7a4cf4c2c338",
+        "GUID:4f682e06dbb3e624faedad9cc27106cc"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
