@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using Cysharp.Threading.Tasks;
 using MessagePipe;
 using UnityEngine;
 using VContainer;
@@ -15,6 +16,8 @@ namespace Weaver.Utilities
 
         private string _valueLastFrame = string.Empty;
 
+        private WeaverAssembler? _lastAssembler;
+        
         private void Update()
         {
             if (_valueLastFrame == _repositoryPath)
@@ -22,7 +25,17 @@ namespace Weaver.Utilities
 
             _valueLastFrame = _repositoryPath;
 
-            _assemblerPublisher.Publish(Directory.Exists(_repositoryPath) ? new WeaverAssembler(_repositoryPath) : null);
+            _ = UniTask.RunOnThreadPool(async () =>
+            {
+                // Build the weaver assembler on a separate thread.
+                // It can take quite some time for it to build the mappings for every object.
+                // I might make the snapshots lazy loaded in the future.
+                var assembler = Directory.Exists(_repositoryPath) ? new WeaverAssembler(_repositoryPath) : null;
+                _lastAssembler = assembler;
+
+                await UniTask.SwitchToMainThread();
+                _assemblerPublisher.Publish(assembler);
+            });
         }
     }
 }

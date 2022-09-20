@@ -51,10 +51,19 @@ namespace Weaver
 
         private void AssemblerChanged(WeaverAssembler? assembler)
         {
+            // If the assemblers are the same, we don't want to double invoke creation and destruction events.
+            if (assembler == _assembler)
+                return;
+
+            var previousAssembler = _assembler;
             _assembler = assembler;
 
             if (_assembler is null)
             {
+                // Delete the ancestor node if it's currently active
+                if (previousAssembler is not null && _lastSnapshotIndex.HasValue)
+                    PublishNodeDeletion(previousAssembler.Snapshots[_lastSnapshotIndex.Value].Ancestor);
+                
                 _lastSnapshotIndex = null;
                 return;
             }
@@ -62,6 +71,12 @@ namespace Weaver
             var current = _clock.GetCurrentTime();
             var snapshot = _assembler.Snapshots.FirstOrDefault(a => a.Time >= current);
             _lastSnapshotIndex = snapshot is not null ? Array.IndexOf(_assembler.Snapshots, snapshot) : 0;
+
+            if (!_lastSnapshotIndex.HasValue)
+                return;
+            
+            // Publish the creation of the first node.
+            PublishNodeCreation(_assembler.Snapshots[_lastSnapshotIndex.Value].Ancestor);
         }
 
         public void Tick()

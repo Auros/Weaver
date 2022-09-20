@@ -1,8 +1,5 @@
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using LibGit2Sharp;
-using UnityEngine;
 using Weaver.Models;
 using Tree = LibGit2Sharp.Tree;
 
@@ -58,7 +55,7 @@ namespace Weaver
             
             var children = tree
                 .Where(t => t.TargetType is TreeEntryTargetType.Tree)
-                .Select(entry => CreateNodeFromTree((entry.Target as Tree)!, entry.Name))
+                .Select(entry => CreateNodeFromTree((entry.Target as Tree)!, entry.Path))
                 .ToArray();
 
             WeaverNode node = new(name, items, children);
