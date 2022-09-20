@@ -10,12 +10,19 @@ namespace Weaver.Models
     public sealed class WeaverItem
     {
         /// <summary>
-        /// The name of this item. Used for display purposes, but can also be used as a unique ID
+        /// The hash of this item. If this item "changes", this property will have a
+        /// different value compared to another item, but the name will be the same.
+        /// </summary>
+        public string Hash { get; }
+        
+        /// <summary>
+        /// The name of this item. Used for display purposes.
         /// </summary>
         public string Name { get; }
-
-        public WeaverItem(string name)
+        
+        public WeaverItem(string hash, string name)
         {
+            Hash = hash;
             Name = name;
         }
     }

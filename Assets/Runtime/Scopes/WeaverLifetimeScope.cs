@@ -23,7 +23,8 @@ namespace Weaver.Scopes
 
             var options = builder.RegisterMessagePipe();
             builder.RegisterMessageBroker<WeaverAssembler?>(options);
-
+            builder.RegisterMessageBroker<string, WeaverNode>(options);
+            builder.RegisterMessageBroker<string, WeaverItemEvent>(options);
         }
     }
 }

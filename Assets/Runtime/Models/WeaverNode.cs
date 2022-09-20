@@ -10,6 +10,11 @@ namespace Weaver.Models
     public sealed class WeaverNode
     {
         /// <summary>
+        /// The name of this node. Can be used as a unique identifier.
+        /// </summary>
+        public string Name { get; }
+        
+        /// <summary>
         /// The items in this node. These can be treated like the "files" in this "directory".
         /// </summary>
         public WeaverItem[] Items { get; }
@@ -24,8 +29,9 @@ namespace Weaver.Models
         /// </summary>
         public WeaverNode[] Children { get; }
         
-        public WeaverNode(WeaverItem[] items, WeaverNode[] children)
+        public WeaverNode(string name, WeaverItem[] items, WeaverNode[] children)
         {
+            Name = name;
             Items = items;
             Children = children;
         }

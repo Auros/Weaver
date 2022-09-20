@@ -43,13 +43,13 @@ namespace Weaver
             var normalizedTime = (currentTime - startTime) * 1.0 / (endTime - startTime);
 
             // Generate the snapshot
-            var ancestor = CreateNodeFromTree(commit.Tree);
+            var ancestor = CreateNodeFromTree(commit.Tree, string.Empty);
             WeaverSnapshot snapshot = new((float)normalizedTime, ancestor);
 
             return snapshot;
         }
 
-        private static WeaverNode CreateNodeFromTree(Tree tree)
+        private static WeaverNode CreateNodeFromTree(Tree tree, string name)
         {
             var items = tree
                 .Where(t => t.TargetType is TreeEntryTargetType.Blob)
@@ -58,16 +58,16 @@ namespace Weaver
             
             var children = tree
                 .Where(t => t.TargetType is TreeEntryTargetType.Tree)
-                .Select(entry => CreateNodeFromTree((entry.Target as Tree)!))
+                .Select(entry => CreateNodeFromTree((entry.Target as Tree)!, entry.Name))
                 .ToArray();
 
-            WeaverNode node = new(items, children);
+            WeaverNode node = new(name, items, children);
             for (int i = 0; i < children.Length; i++)
                 children[i].Parent = node;
             
             return node;
         }
 
-        private static WeaverItem CreateItemFromEntry(TreeEntry entry) => new(entry.Name);
+        private static WeaverItem CreateItemFromEntry(TreeEntry entry) => new(entry.Target.Sha, entry.Path);
     }
 }

@@ -17,7 +17,7 @@ namespace Weaver
 
         public float GetCurrentTime()
         {
-            return 1f - _value / _upperBound;
+            return _value / _upperBound;
         }
     }
 }
