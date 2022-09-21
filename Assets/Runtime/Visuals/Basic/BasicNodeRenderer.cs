@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using MessagePipe;
 using UnityEngine;
+using UnityEngine.Pool;
 using VContainer;
 using Weaver.Models;
 using Weaver.Visuals.Utilities;
@@ -13,11 +14,19 @@ namespace Weaver.Visuals.Basic
     {
         [Inject]
         private readonly ISubscriber<string, WeaverNode> _nodeSubscriber = null!;
+        
+        [Inject]
+        private readonly ISubscriber<string, WeaverItemEvent> _itemSubscriber = null!;
 
         [SerializeField]
         private GameObject _nodePrefab = null!;
+
+        [SerializeField]
+        private BasicNodeItem _nodeItemPrefab = null!;
         
         private IDisposable? _subscriptionDisposer;
+        
+        private ObjectPool<BasicNodeItem> _itemPool = null!;
 
         private readonly Dictionary<string, PhysicalNode> _physicalNodes = new();
 
@@ -27,8 +36,36 @@ namespace Weaver.Visuals.Basic
             public Transform? Parent { get; set; }
             public LineRenderer? Renderer { get; }
 
+            private int _lastItemCalculation;
+            public List<BasicNodeItem> PhysicalItems { get; } = new();
+
             public void ManualUpdate()
             {
+                if (PhysicalItems.Count != _lastItemCalculation && PhysicalItems.Count != 0)
+                {
+                    var size = PhysicalItems.Count;
+                    var phi = Mathf.PI * (3f - Mathf.Sqrt(5f));
+                    var radiusModifier = Mathf.Pow(size, 1f / 3f);
+
+                    for (int i = 0; i < size; i++)
+                    {
+                        var y = 1f - i / (size - 1f) * 2f;
+                        var radius = Mathf.Sqrt(1f - y * y);
+
+                        radius *= radiusModifier;
+                
+                        var theta = phi * i;
+                        var x = Mathf.Cos(theta) * radius;
+                        var z = Mathf.Sin(theta) * radius;
+
+                        if (float.IsNaN(x))
+                            break;
+                
+                        PhysicalItems[i].transform.localPosition = new Vector3(x, y, z);
+                    }
+                }
+                _lastItemCalculation = PhysicalItems.Count;
+                
                 if (Renderer == null || Parent == null)
                     return;
                 
@@ -55,8 +92,24 @@ namespace Weaver.Visuals.Basic
 
             _nodeSubscriber.Subscribe(WeaverEventKeys.NodeCreated, NodeCreated).AddTo(disposer);
             _nodeSubscriber.Subscribe(WeaverEventKeys.NodeDestroyed, NodeDestroyed).AddTo(disposer);
+            _itemSubscriber.Subscribe(WeaverEventKeys.ItemCreated, ItemCreated).AddTo(disposer);
+            _itemSubscriber.Subscribe(WeaverEventKeys.ItemDestroyed, ItemDestroyed).AddTo(disposer);
             
             _subscriptionDisposer = disposer.Build();
+            
+            _itemPool = new ObjectPool<BasicNodeItem>(
+                () => Instantiate(_nodeItemPrefab),
+                item =>
+                {
+                    item.gameObject.SetActive(true);
+                }, item =>
+                {
+                    item.transform.SetParent(null);
+                    item.gameObject.SetActive(false);
+                }, item =>
+                {
+                    Destroy(item.gameObject);
+                });
         }
 
         private void Update()
@@ -70,6 +123,38 @@ namespace Weaver.Visuals.Basic
             _subscriptionDisposer?.Dispose();
         }
 
+        private void ItemCreated(WeaverItemEvent itemEvent)
+        {
+            CreateItem(itemEvent.Node);
+        }
+
+        private void CreateItem(WeaverNode node)
+        {
+            var physicalNode = GetPhysicalNode(node);
+            var item = _itemPool.Get();
+            item.transform.SetParent(physicalNode.Transform);
+            item.transform.localPosition = Vector3.zero;
+            item.transform.localRotation = Quaternion.identity;
+            physicalNode.PhysicalItems.Add(item);
+        }
+
+        private void ItemDestroyed(WeaverItemEvent itemEvent)
+        {
+            DestroyItem(itemEvent.Node);
+        }
+
+        private void DestroyItem(WeaverNode node)
+        {
+            var physicalNode = GetPhysicalNode(node);
+            
+            if (physicalNode.PhysicalItems.Count == 0)
+                return;
+            
+            var item = physicalNode.PhysicalItems[^1];
+            physicalNode.PhysicalItems.Remove(item);
+            _itemPool.Release(item);
+        }
+        
         private void NodeCreated(WeaverNode node)
         {
             if (node.Parent == null)
@@ -81,8 +166,6 @@ namespace Weaver.Visuals.Basic
             physicalNode.Parent = physicalParent.Transform;
 
             static float V() => Random.Range(-1f, 1f);
-            
-            // random point calculation on sphere
             
             const float distance = 15f;
 
@@ -107,20 +190,9 @@ namespace Weaver.Visuals.Basic
                 
                 rb.AddForce(physicalNode.Transform.TransformDirection(normalizedMoveVector * 500f));
             }
-            /*
-            var ancestorPosition = physicalParent.Transform.position;
-            // If it's not a direct child of the ancestor
-            if (node.Parent.Parent != null)
-                ancestorPosition = _physicalNodes[string.Empty].Transform.position;
             
-
-            //var ancestorPosition = physicalParent.Transform.position;
-            var nodePosition = physicalNode.Transform.position;
-            var normalizedMoveVector = (nodePosition - ancestorPosition).normalized;
-            //var randomMovementVector = nodePosition + (normalizedMoveVector + new Vector3(V(), V(), V()) * distance);
-
-            physicalNode.Transform.localPosition = physicalParent.Transform.localPosition +
-                physicalNode.Transform.TransformDirection(normalizedMoveVector + new Vector3(V(), V(), V()) * distance);*/
+            foreach (var _ in node.Children)
+                CreateItem(node);
         }
         
         private void NodeDestroyed(WeaverNode node)
@@ -128,6 +200,9 @@ namespace Weaver.Visuals.Basic
             if (!_physicalNodes.TryGetValue(node.Name, out var physicalNode))
                 return;
 
+            foreach (var _ in node.Children)
+                DestroyItem(node);
+            
             _physicalNodes.Remove(node.Name);
             Destroy(physicalNode.Transform.gameObject);
         }
