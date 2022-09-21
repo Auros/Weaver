@@ -56,6 +56,7 @@ namespace Weaver.Visuals.Monolith
         // Restore the node coming into the object pool.
         private void ReleaseNode(MonolithNode node)
         {
+            node.UnlinkParent();
             node.transform.SetParent(_inactiveNodeContainer);
             node.gameObject.SetActive(false);
         }

@@ -2,7 +2,7 @@
 {
     public class WeaverItemEvent
     {
-        public WeaverItem Item { get; set; }
-        public WeaverNode Node { get; set; }
+        public WeaverItem Item { get; set; } = null!;
+        public WeaverNode Node { get; set; } = null!;
     }
 }

@@ -44,7 +44,8 @@
     "jp.hadashikick.vcontainer": "1.11.1",
     "com.cysharp.messagepipe.vcontainer": "1.7.4",
     "com.cysharp.messagepipe": "1.7.4",
-    "com.cysharp.unitask": "2.3.1"
+    "com.cysharp.unitask": "2.3.1",
+    "nl.elraccoone.tweens": "2.1.0"
   },
   "scopedRegistries": [
     {
@@ -55,7 +56,8 @@
         "com.cysharp.messagepipe.vcontainer",
         "com.cysharp.unitask",
         "com.openupm",
-        "jp.hadashikick.vcontainer"
+        "jp.hadashikick.vcontainer",
+        "nl.elraccoone.tweens"
       ]
     }
   ]
