@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using Cinemachine;
 using MessagePipe;
 using UnityEngine;
 using VContainer;
@@ -30,6 +32,9 @@ namespace Weaver.Visuals.Monolith
         
         [SerializeField]
         private MonolithNodePoolController _monolithNodePoolController = null!;
+
+        [SerializeField]
+        private CinemachineTargetGroup _cinemachineTargetGroup = null!;
         
         private Random _random = new();
         private IDisposable? _subscriptionDisposer;
@@ -74,6 +79,9 @@ namespace Weaver.Visuals.Monolith
             physicalTransform.localPosition = calculatedPos;
             
             physical.Launch(normalizedMoveVector * _nodeLaunchForce);
+            
+            foreach (var item in node.Items)
+                CreateItem(node, item);
         }
 
         private void NodeDestroyed(WeaverNode node)
@@ -81,23 +89,39 @@ namespace Weaver.Visuals.Monolith
             if (!_physicalNodes.TryGetValue(node.Name, out var physicalNode))
                 return;
 
+            foreach (var item in node.Items)
+                DestroyItem(node, item);
+            
             _physicalNodes.Remove(node.Name);
+            _cinemachineTargetGroup.RemoveMember(physicalNode.transform);
             _monolithNodePoolController.Release(physicalNode);
         }
 
         private void ItemCreated(WeaverItemEvent item)
         {
-            
+            CreateItem(item.Node, item.Item);
+        }
+
+        private void CreateItem(WeaverNode node, WeaverItem item)
+        {
+            GetPhysicalNode(node).AddItem(item);
         }
         
         private void ItemChanged(WeaverItemEvent item)
         {
-            
+            GetPhysicalNode(item.Node).ActiveItems
+                .FirstOrDefault(i => i.Path == item.Item.Name)
+                ?.RunHeartbeat();
         }
         
         private void ItemDestroyed(WeaverItemEvent item)
         {
-            
+            DestroyItem(item.Node, item.Item);
+        }
+
+        private void DestroyItem(WeaverNode node, WeaverItem item)
+        {
+            GetPhysicalNode(node).RemoveItem(item);
         }
 
         private void OnDestroy()
@@ -126,7 +150,8 @@ namespace Weaver.Visuals.Monolith
                 physicalTransform.localPosition = Vector3.zero;
                 physicalTransform.localRotation = Quaternion.identity;
             }
-
+            
+            _cinemachineTargetGroup.AddMember(physical.transform, 1f, 20f);
             _physicalNodes.Add(node.Name, physical);
             return physical;
         }

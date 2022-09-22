@@ -29,11 +29,17 @@ namespace Weaver.Models
         /// </summary>
         public WeaverNode[] Children { get; }
         
-        public WeaverNode(string name, WeaverItem[] items, WeaverNode[] children)
+        /// <summary>
+        /// The generation of this node (aka the depth)
+        /// </summary>
+        public int Generation { get; }
+        
+        public WeaverNode(string name, WeaverItem[] items, WeaverNode[] children, int generation)
         {
             Name = name;
             Items = items;
             Children = children;
+            Generation = generation;
         }
     }
 }

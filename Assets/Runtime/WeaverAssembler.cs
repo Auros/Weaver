@@ -46,7 +46,7 @@ namespace Weaver
             return snapshot;
         }
 
-        private static WeaverNode CreateNodeFromTree(Tree tree, string name)
+        private static WeaverNode CreateNodeFromTree(Tree tree, string name, int generation = 0)
         {
             var items = tree
                 .Where(t => t.TargetType is TreeEntryTargetType.Blob)
@@ -55,10 +55,10 @@ namespace Weaver
             
             var children = tree
                 .Where(t => t.TargetType is TreeEntryTargetType.Tree)
-                .Select(entry => CreateNodeFromTree((entry.Target as Tree)!, entry.Path))
+                .Select(entry => CreateNodeFromTree((entry.Target as Tree)!, entry.Path, generation + 1))
                 .ToArray();
 
-            WeaverNode node = new(name, items, children);
+            WeaverNode node = new(name, items, children, generation);
             for (int i = 0; i < children.Length; i++)
                 children[i].Parent = node;
             

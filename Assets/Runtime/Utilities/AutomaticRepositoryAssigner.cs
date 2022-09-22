@@ -3,6 +3,7 @@ using Cysharp.Threading.Tasks;
 using MessagePipe;
 using UnityEngine;
 using VContainer;
+using Weaver.Models;
 
 namespace Weaver.Utilities
 {
@@ -11,9 +12,15 @@ namespace Weaver.Utilities
         [Inject]
         private IPublisher<WeaverAssembler?> _assemblerPublisher = null!;
 
+        [Inject]
+        private IClock _clock = null!;
+
         [SerializeField]
         private string _repositoryPath = string.Empty;
 
+        [SerializeField]
+        private bool _resetTimeOnChange;
+        
         private string _valueLastFrame = string.Empty;
 
         private WeaverAssembler? _lastAssembler;
@@ -24,16 +31,23 @@ namespace Weaver.Utilities
                 return;
 
             _valueLastFrame = _repositoryPath;
-
+            
             _ = UniTask.RunOnThreadPool(async () =>
             {
+                var repo = _repositoryPath;
+                if (!_repositoryPath.EndsWith("\\.git"))
+                    repo += "\\.git";
                 // Build the weaver assembler on a separate thread.
                 // It can take quite some time for it to build the mappings for every object.
                 // I might make the snapshots lazy loaded in the future.
-                var assembler = Directory.Exists(_repositoryPath) ? new WeaverAssembler(_repositoryPath) : null;
+                var assembler = Directory.Exists(repo) ? new WeaverAssembler(repo) : null;
                 _lastAssembler = assembler;
 
                 await UniTask.SwitchToMainThread();
+                
+                if (_resetTimeOnChange)
+                    _clock.SetCurrentTime(0);
+                
                 _assemblerPublisher.Publish(assembler);
             });
         }

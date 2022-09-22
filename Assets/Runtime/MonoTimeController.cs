@@ -19,5 +19,10 @@ namespace Weaver
         {
             return _value / _upperBound;
         }
+
+        public void SetCurrentTime(float value)
+        {
+            _value = value * _upperBound;
+        }
     }
 }

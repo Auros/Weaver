@@ -1,6 +1,10 @@
-﻿using ElRaccoone.Tweens.Core;
+﻿using System.Collections.Generic;
+using System.Linq;
+using ElRaccoone.Tweens;
+using ElRaccoone.Tweens.Core;
 using JetBrains.Annotations;
 using UnityEngine;
+using Weaver.Models;
 using Weaver.Visuals.Utilities;
 
 namespace Weaver.Visuals.Monolith
@@ -17,20 +21,33 @@ namespace Weaver.Visuals.Monolith
         [SerializeField]
         private LineRenderer _parentLinkerLine = null!;
 
+        [SerializeField, Min(0)]
+        private float _itemTweeningMovementSpeed = 0.5f;
+        
         [SerializeField]
         private float _timeToConnectFromParent = 1f;
 
         [SerializeField]
-        private EaseType _connectionEasing = EaseType.CubicOut; 
+        private MonolithItemPoolController _monolithItemPoolController = null!;
+        
+        [SerializeField]
+        private EaseType _connectionEasing = EaseType.CubicOut;
+
+        [SerializeField]
+        private EaseType _itemMovementEasing = EaseType.CubicOut;
         
         private MonolithNode? _nodeParent;
+        private float _timeSinceParentConnection;
         private readonly Vector3[] _linePositionSetter = new Vector3[2];
 
         public string Path { get; private set; } = string.Empty;
 
         public bool HasBuiltLine => _timeSinceParentConnection >= _timeToConnectFromParent;
 
-        private float _timeSinceParentConnection;
+        public List<MonolithItem> ActiveItems { get; set; } = new();
+
+        // Golden Ratio
+        private static readonly float _phi = Mathf.PI * (3f - Mathf.Sqrt(5));
         
         public MonolithNode LinkParent(MonolithNode nodeParent)
         {
@@ -59,6 +76,60 @@ namespace Weaver.Visuals.Monolith
         public void Launch(Vector3 inDirection)
         {
             _rigidbody.AddForce(transform.TransformDirection(inDirection));
+        }
+
+        public void AddItem(WeaverItem weaverItem)
+        {
+            var item = _monolithItemPoolController.Get().SetPath(weaverItem.Name);
+            ActiveItems.Add(item);
+            
+            var itemTransform = item.transform;
+            itemTransform.SetParent(transform);
+            itemTransform.localPosition = Vector3.zero;
+            itemTransform.localRotation = Quaternion.identity;
+            item.RunHeartbeat();
+            UpdateItems();
+        }
+
+        public void RemoveItem(WeaverItem weaverItem)
+        {
+            var item = ActiveItems.FirstOrDefault(a => a.Path != weaverItem.Name);
+            if (item == null)
+                return;
+            
+            _monolithItemPoolController.Release(item);
+            ActiveItems.Remove(item);
+            UpdateItems();
+        }
+
+        private void UpdateItems()
+        {
+            if (ActiveItems.Count == 0)
+                return;
+            
+            var size = ActiveItems.Count;
+            
+            // Get the square root of the number of elements we have
+            // to naturally scale the size of the node over time.
+            var radiusModifier = Mathf.Pow(size, 1f / 3f);
+
+            for (int i = 0; i < size; i++)
+            {
+                var y = 1f - i / (size - 1f) * 2f;
+                var radius = Mathf.Sqrt(1f - y * y);
+                var theta = _phi * i;
+                var x = Mathf.Cos(theta) * radius;
+                var z = Mathf.Sin(theta) * radius;
+
+                // Stop computing if we didn't calculate the correct number.
+                if (float.IsNaN(x))
+                    break;
+
+                //ActiveItems[i].transform.localPosition = new Vector3(x, y, z) * radiusModifier;
+                ActiveItems[i].transform
+                    .TweenLocalPosition(new Vector3(x, y, z) * radiusModifier, _itemTweeningMovementSpeed)
+                    .SetEase(_itemMovementEasing);
+            }
         }
 
         private void Update()

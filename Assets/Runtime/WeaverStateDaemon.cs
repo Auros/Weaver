@@ -58,15 +58,14 @@ namespace Weaver
             var previousAssembler = _assembler;
             _assembler = assembler;
 
-            if (_assembler is null)
-            {
-                // Delete the ancestor node if it's currently active
-                if (previousAssembler is not null && _lastSnapshotIndex.HasValue)
-                    PublishNodeDeletion(previousAssembler.Snapshots[_lastSnapshotIndex.Value].Ancestor);
+            // Delete the ancestor node if it's currently active
+            if (previousAssembler is not null && _lastSnapshotIndex.HasValue)
+                PublishNodeDeletion(previousAssembler.Snapshots[_lastSnapshotIndex.Value].Ancestor);
                 
-                _lastSnapshotIndex = null;
+            _lastSnapshotIndex = null;
+
+            if (_assembler is null)
                 return;
-            }
             
             var current = _clock.GetCurrentTime();
             var snapshot = _assembler.Snapshots.FirstOrDefault(a => a.Time >= current);
