@@ -88,6 +88,7 @@ namespace Weaver.Visuals.Monolith
         {
             var item = _monolithItemPoolController.Get().SetPath(weaverItem.Name);
             ActiveItems.Add(item);
+            _debug.Items.Add(item.Path);
             
             var itemTransform = item.transform;
             itemTransform.SetParent(transform);
@@ -99,16 +100,16 @@ namespace Weaver.Visuals.Monolith
             return item;
         }
 
-        public MonolithItem? RemoveItem(WeaverItem weaverItem)
+        public void RemoveItem(WeaverItem weaverItem)
         {
             var item = ActiveItems.FirstOrDefault(a => a.Path != weaverItem.Name);
             if (item == null)
-                return null;
+                return;
             
             _monolithItemPoolController.Release(item);
             ActiveItems.Remove(item);
+            _debug.Items.Remove(item.Path);
             UpdateItems();
-            return item;
         }
 
         private void UpdateItems()

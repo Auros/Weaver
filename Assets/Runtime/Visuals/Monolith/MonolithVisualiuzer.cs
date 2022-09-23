@@ -47,6 +47,7 @@ namespace Weaver.Visuals.Monolith
         
         private Random _random = new();
         private IDisposable? _subscriptionDisposer;
+        private readonly List<MonolithOwner> _activeOwners = new();
         private readonly Dictionary<string, MonolithNode> _physicalNodes = new();
         private readonly Dictionary<string, MonolithOwner> _physicalOwners = new();
 
@@ -100,7 +101,10 @@ namespace Weaver.Visuals.Monolith
                 return;
 
             foreach (var item in node.Items)
-                DestroyItem(node, item);
+                DestroyItem(node, item , false); // We don't want to clear items, as the node clear call below will handle that.
+
+            foreach (var owner in _activeOwners)
+                owner.ClearActionsForNode(physicalNode);
             
             _physicalNodes.Remove(node.Name);
             _cinemachineTargetGroup.RemoveMember(physicalNode.transform);
@@ -120,7 +124,8 @@ namespace Weaver.Visuals.Monolith
         private void CreateItem(WeaverNode node, WeaverItem item)
         {
             var physicalNode = GetPhysicalNode(node);
-            GetPhysicalOwner(node.Owner).AddAction(physicalNode, item, MonolithActionType.Created);
+            var physicalOwner = GetPhysicalOwner(node.Owner);
+            physicalOwner.AddAction(physicalNode, item, MonolithActionType.Created);
         }
         
         private void ItemChanged(WeaverItemEvent @event)
@@ -128,10 +133,18 @@ namespace Weaver.Visuals.Monolith
             var physicalNode = GetPhysicalNode(@event.Node);
             GetPhysicalOwner(@event.Node.Owner).AddAction(physicalNode, @event.Item, MonolithActionType.Changed);
         }
-        private void DestroyItem(WeaverNode node, WeaverItem item)
+        private void DestroyItem(WeaverNode node, WeaverItem item, bool clearActions = true)
         {
             var physicalNode = GetPhysicalNode(node);
-            GetPhysicalOwner(node.Owner).AddAction(physicalNode, item, MonolithActionType.Destroyed);
+            var physicalOwner = GetPhysicalOwner(node.Owner);
+            physicalOwner.AddAction(physicalNode, item, MonolithActionType.Destroyed);
+
+            if (!clearActions)
+                return;
+            
+            foreach (var owner in _activeOwners)
+                if (owner != physicalOwner) // Skip over ourselves, we want that action to get fired off.
+                    owner.ClearActionsForItem(item);
         }
 
         private void OnDestroy()
@@ -177,6 +190,7 @@ namespace Weaver.Visuals.Monolith
 
             physical = _monolithOwnerPoolController.Get();
             _physicalOwners.Add(owner.Id, physical);
+            _activeOwners.Add(physical); // We also add it to a list so we can safely iterate it without allocation.
             return physical;
         }
     }
