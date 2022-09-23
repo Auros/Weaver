@@ -29,7 +29,7 @@ namespace Weaver.Visuals.Monolith
             return this;
         }
 
-        public MonolithItem RunHeartbeat()
+        public void RunHeartbeat()
         {
             this
                 .TweenLocalScale(Vector3.one * _heartbeatJumpScale, _heartbeatJumpTime)
@@ -37,7 +37,6 @@ namespace Weaver.Visuals.Monolith
                 {
                     this.TweenLocalScale(Vector3.one, _heartbeatReturnTime).SetEase(_heartbeatReturnEase);
                 });
-            return this;
         }
     }
 }

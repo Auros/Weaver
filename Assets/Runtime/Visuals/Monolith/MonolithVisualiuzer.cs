@@ -20,6 +20,12 @@ namespace Weaver.Visuals.Monolith
         
         [Inject]
         private readonly ISubscriber<string, WeaverItemEvent> _itemEventSubscriber = null!;
+                
+        [Inject]
+        private MonolithNodePoolController _monolithNodePoolController = null!;
+
+        [Inject]
+        private MonolithOwnerPoolController _monolithOwnerPoolController = null!;
 
         [SerializeField, Min(0.01f)]
         private float _nodeSpawnDistance = 10f;
@@ -35,13 +41,7 @@ namespace Weaver.Visuals.Monolith
 
         [SerializeField]
         private AnimationCurve _nodeWeightCurve = null!;
-        
-        [SerializeField]
-        private MonolithNodePoolController _monolithNodePoolController = null!;
 
-        [SerializeField]
-        private MonolithOwnerPoolController _monolithOwnerPoolController = null!;
-        
         [SerializeField]
         private CinemachineTargetGroup _cinemachineTargetGroup = null!;
         

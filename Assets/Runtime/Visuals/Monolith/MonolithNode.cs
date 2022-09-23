@@ -4,6 +4,7 @@ using ElRaccoone.Tweens;
 using ElRaccoone.Tweens.Core;
 using JetBrains.Annotations;
 using UnityEngine;
+using VContainer;
 using Weaver.Models;
 using Weaver.Visuals.Utilities;
 
@@ -12,6 +13,9 @@ namespace Weaver.Visuals.Monolith
     [PublicAPI]
     public class MonolithNode : MonoBehaviour
     {
+        [Inject]
+        private MonolithItemPoolController _monolithItemPoolController = null!;
+   
         [SerializeField]
         private Rigidbody _rigidbody = null!;
 
@@ -27,9 +31,6 @@ namespace Weaver.Visuals.Monolith
         [SerializeField]
         private float _timeToConnectFromParent = 1f;
 
-        [SerializeField]
-        private MonolithItemPoolController _monolithItemPoolController = null!;
-        
         [SerializeField]
         private EaseType _connectionEasing = EaseType.CubicOut;
 
