@@ -73,12 +73,18 @@ namespace Weaver.Visuals.Monolith
             return this;
         }
 
+        public MonolithNode SetMass(float mass)
+        {
+            _rigidbody.mass = mass;
+            return this;
+        }
+
         public void Launch(Vector3 inDirection)
         {
             _rigidbody.AddForce(transform.TransformDirection(inDirection));
         }
 
-        public void AddItem(WeaverItem weaverItem)
+        public MonolithItem AddItem(WeaverItem weaverItem)
         {
             var item = _monolithItemPoolController.Get().SetPath(weaverItem.Name);
             ActiveItems.Add(item);
@@ -89,17 +95,20 @@ namespace Weaver.Visuals.Monolith
             itemTransform.localRotation = Quaternion.identity;
             item.RunHeartbeat();
             UpdateItems();
+
+            return item;
         }
 
-        public void RemoveItem(WeaverItem weaverItem)
+        public MonolithItem? RemoveItem(WeaverItem weaverItem)
         {
             var item = ActiveItems.FirstOrDefault(a => a.Path != weaverItem.Name);
             if (item == null)
-                return;
+                return null;
             
             _monolithItemPoolController.Release(item);
             ActiveItems.Remove(item);
             UpdateItems();
+            return item;
         }
 
         private void UpdateItems()

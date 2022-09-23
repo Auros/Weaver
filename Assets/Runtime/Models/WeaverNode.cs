@@ -13,7 +13,12 @@ namespace Weaver.Models
         /// The name of this node. Can be used as a unique identifier.
         /// </summary>
         public string Name { get; }
-        
+
+        /// <summary>
+        /// The owner is the entity/reason this node was created.
+        /// </summary>
+        public WeaverOwner Owner { get; }
+
         /// <summary>
         /// The items in this node. These can be treated like the "files" in this "directory".
         /// </summary>
@@ -34,9 +39,10 @@ namespace Weaver.Models
         /// </summary>
         public int Generation { get; }
         
-        public WeaverNode(string name, WeaverItem[] items, WeaverNode[] children, int generation)
+        public WeaverNode(string name, WeaverOwner owner, WeaverItem[] items, WeaverNode[] children, int generation)
         {
             Name = name;
+            Owner = owner;
             Items = items;
             Children = children;
             Generation = generation;

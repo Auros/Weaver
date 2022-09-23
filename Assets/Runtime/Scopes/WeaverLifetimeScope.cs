@@ -1,9 +1,11 @@
 using System;
 using MessagePipe;
 using UnityEngine;
+using UnityEngine.Pool;
 using VContainer;
 using VContainer.Unity;
 using Weaver.Models;
+using Weaver.Visuals.Monolith;
 
 namespace Weaver.Scopes
 {
@@ -19,7 +21,12 @@ namespace Weaver.Scopes
                 
             builder.RegisterEntryPoint<WeaverStateDaemon>();
             builder.RegisterComponent<IClock>(_monoTimeController);
-
+            builder.Register<IObjectPool<MonolithAction>>(
+                _ =>new ObjectPool<MonolithAction>(
+                    () => new MonolithAction(),
+                    actionOnRelease: action => action.Reset()
+                    ),
+                Lifetime.Singleton);
 
             var options = builder.RegisterMessagePipe();
             builder.RegisterMessageBroker<WeaverAssembler?>(options);

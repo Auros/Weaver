@@ -28,17 +28,27 @@ namespace Weaver.Visuals.Monolith
         private float _nodeLaunchForce = 500f;
 
         [SerializeField]
-        private string _seed = "monolith";
+        private float _nodeSpawnOffset = 5f;
+
+        [SerializeField]
+        private string _seed = nameof(MonolithVisualiuzer);
+
+        [SerializeField]
+        private AnimationCurve _nodeWeightCurve = null!;
         
         [SerializeField]
         private MonolithNodePoolController _monolithNodePoolController = null!;
 
+        [SerializeField]
+        private MonolithOwnerPoolController _monolithOwnerPoolController = null!;
+        
         [SerializeField]
         private CinemachineTargetGroup _cinemachineTargetGroup = null!;
         
         private Random _random = new();
         private IDisposable? _subscriptionDisposer;
         private readonly Dictionary<string, MonolithNode> _physicalNodes = new();
+        private readonly Dictionary<string, MonolithOwner> _physicalOwners = new();
 
         private void Start()
         {
@@ -72,8 +82,8 @@ namespace Weaver.Visuals.Monolith
             
             var calculatedPos = isAncestorChild switch
             {
-                true => physicalTransform.TransformDirection(normalizedMoveVector + new Vector3(V(), V(), V()) * _nodeSpawnDistance),
-                false => parentPos + parentTransform!.TransformDirection(normalizedMoveVector * _nodeSpawnDistance + new Vector3(V(), V(), V()))
+                true => physicalTransform.TransformDirection(normalizedMoveVector * _nodeSpawnOffset + new Vector3(V(), V(), V()) * _nodeSpawnDistance),
+                false => parentPos + parentTransform!.TransformDirection(normalizedMoveVector * _nodeSpawnOffset + new Vector3(V(), V(), V()) * _nodeSpawnDistance)
             };
 
             physicalTransform.localPosition = calculatedPos;
@@ -101,27 +111,27 @@ namespace Weaver.Visuals.Monolith
         {
             CreateItem(item.Node, item.Item);
         }
-
-        private void CreateItem(WeaverNode node, WeaverItem item)
-        {
-            GetPhysicalNode(node).AddItem(item);
-        }
-        
-        private void ItemChanged(WeaverItemEvent item)
-        {
-            GetPhysicalNode(item.Node).ActiveItems
-                .FirstOrDefault(i => i.Path == item.Item.Name)
-                ?.RunHeartbeat();
-        }
         
         private void ItemDestroyed(WeaverItemEvent item)
         {
             DestroyItem(item.Node, item.Item);
         }
 
+        private void CreateItem(WeaverNode node, WeaverItem item)
+        {
+            var physicalNode = GetPhysicalNode(node);
+            GetPhysicalOwner(node.Owner).AddAction(physicalNode, item, MonolithActionType.Created);
+        }
+        
+        private void ItemChanged(WeaverItemEvent @event)
+        {
+            var physicalNode = GetPhysicalNode(@event.Node);
+            GetPhysicalOwner(@event.Node.Owner).AddAction(physicalNode, @event.Item, MonolithActionType.Changed);
+        }
         private void DestroyItem(WeaverNode node, WeaverItem item)
         {
-            GetPhysicalNode(node).RemoveItem(item);
+            var physicalNode = GetPhysicalNode(node);
+            GetPhysicalOwner(node.Owner).AddAction(physicalNode, item, MonolithActionType.Destroyed);
         }
 
         private void OnDestroy()
@@ -135,8 +145,11 @@ namespace Weaver.Visuals.Monolith
             if (_physicalNodes.TryGetValue(node.Name, out var physical))
                 return physical;
 
-            // Grab a physical node from the pool and set its path.
-            physical = _monolithNodePoolController.Get().SetPath(node.Name);
+            // Grab a physical node from the pool and set its path and mass.
+            physical = _monolithNodePoolController
+                .Get()
+                .SetPath(node.Name)
+                .SetMass(_nodeWeightCurve.Evaluate(node.Generation));
             
             // Build up the parent nodes to set the parent transform.
             // Notice: Recursively builds the parents until it reaches an ancestor.
@@ -153,6 +166,17 @@ namespace Weaver.Visuals.Monolith
             
             _cinemachineTargetGroup.AddMember(physical.transform, 1f, 20f);
             _physicalNodes.Add(node.Name, physical);
+            return physical;
+        }
+
+        private MonolithOwner GetPhysicalOwner(WeaverOwner owner)
+        {
+            // If there's already an owner active that matches, use it.
+            if (_physicalOwners.TryGetValue(owner.Id, out var physical))
+                return physical;
+
+            physical = _monolithOwnerPoolController.Get();
+            _physicalOwners.Add(owner.Id, physical);
             return physical;
         }
     }
