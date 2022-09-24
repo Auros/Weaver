@@ -31,12 +31,12 @@ namespace Weaver.Visuals.Monolith
 
         public void RunHeartbeat()
         {
-            //this
-            //    .TweenLocalScale(Vector3.one * _heartbeatJumpScale, _heartbeatJumpTime)
-            //    .SetEase(_heartbeatJumpEase).SetOnComplete(() =>
-            //    {
-            //        this.TweenLocalScale(Vector3.one, _heartbeatReturnTime).SetEase(_heartbeatReturnEase);
-            //    });
+            this
+                .TweenLocalScale(Vector3.one * _heartbeatJumpScale, _heartbeatJumpTime)
+                .SetEase(_heartbeatJumpEase).SetOnComplete(() =>
+                {
+                    this.TweenLocalScale(Vector3.one, _heartbeatReturnTime).SetEase(_heartbeatReturnEase);
+                });
         }
     }
 }
