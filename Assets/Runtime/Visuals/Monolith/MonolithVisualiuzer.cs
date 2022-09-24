@@ -66,9 +66,6 @@ namespace Weaver.Visuals.Monolith
 
         private void NodeCreated(WeaverNode node)
         {
-            // We use System.Random because I want randomness to be seeded by the visualizer instance.
-            float V() => Mathf.Lerp(-1f, 1f, (float)_random.NextDouble());
-            
             var physical = GetPhysicalNode(node);
             var parent = node.Parent != null ? GetPhysicalNode(node.Parent) : null;
             
@@ -83,12 +80,11 @@ namespace Weaver.Visuals.Monolith
             
             var calculatedPos = isAncestorChild switch
             {
-                true => physicalTransform.TransformDirection(normalizedMoveVector * _nodeSpawnOffset + new Vector3(V(), V(), V()) * _nodeSpawnDistance),
-                false => parentPos + parentTransform!.TransformDirection(normalizedMoveVector * _nodeSpawnOffset + new Vector3(V(), V(), V()) * _nodeSpawnDistance)
+                true => physicalTransform.TransformDirection(normalizedMoveVector * _nodeSpawnOffset + _random.Vector3() * _nodeSpawnDistance),
+                false => parentPos + parentTransform!.TransformDirection(normalizedMoveVector * _nodeSpawnOffset + _random.Vector3() * _nodeSpawnDistance)
             };
 
             physicalTransform.localPosition = calculatedPos;
-            
             physical.Launch(normalizedMoveVector * _nodeLaunchForce);
             
             foreach (var item in node.Items)
@@ -101,7 +97,7 @@ namespace Weaver.Visuals.Monolith
                 return;
 
             foreach (var item in node.Items)
-                DestroyItem(node, item , false); // We don't want to clear items, as the node clear call below will handle that.
+                DestroyItem(node, item, false); // We don't want to clear items, as the node clear call below will handle that.
 
             foreach (var owner in _activeOwners)
                 owner.ClearActionsForNode(physicalNode);
@@ -147,6 +143,13 @@ namespace Weaver.Visuals.Monolith
                     owner.ClearActionsForItem(item);
         }
 
+        private void OwnerDeactivated(MonolithOwner owner)
+        {
+            _activeOwners.Remove(owner);
+            _physicalOwners.Remove(owner.Id);
+            _monolithOwnerPoolController.Release(owner);
+        }
+
         private void OnDestroy()
         {
             _subscriptionDisposer?.Dispose();
@@ -171,7 +174,6 @@ namespace Weaver.Visuals.Monolith
             else
             {
                 // Upon creation, ensure that the root node is positioned at the center of our canvas.
-                
                 var physicalTransform = physical.transform;
                 physicalTransform.localPosition = Vector3.zero;
                 physicalTransform.localRotation = Quaternion.identity;
@@ -189,6 +191,7 @@ namespace Weaver.Visuals.Monolith
                 return physical;
 
             physical = _monolithOwnerPoolController.Get();
+            physical.SetData(owner.Id, _random, OwnerDeactivated);
             _physicalOwners.Add(owner.Id, physical);
             _activeOwners.Add(physical); // We also add it to a list so we can safely iterate it without allocation.
             return physical;

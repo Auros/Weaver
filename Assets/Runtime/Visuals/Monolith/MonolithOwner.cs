@@ -1,9 +1,13 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using ElRaccoone.Tweens;
+using ElRaccoone.Tweens.Core;
 using UnityEngine;
 using UnityEngine.Pool;
 using VContainer;
 using Weaver.Models;
+using Random = UnityEngine.Random;
 
 namespace Weaver.Visuals.Monolith
 {
@@ -15,9 +19,30 @@ namespace Weaver.Visuals.Monolith
         [SerializeField]
         private AnimationCurve _actionCurve = null!;
 
+        [SerializeField]
+        private float _idealDistanceFromNode = 5f;
+
+        [SerializeField]
+        private float _timeToReachTarget = 1f;
+
+        [SerializeField]
+        private EaseType _movementEasing = EaseType.CubicOut;
+
+        [SerializeField]
+        private float _inactivityTimeUntilDeactivation = 5f;
+        
+        private bool _deactivating;
+        private System.Random? _random;
+        private float _timeSpentInactive;
         private int _actionCountLastFrame;
         private float _timeUntilNextAction;
+        private MonolithNode? _currentlyMovingTo;
+        private Action<MonolithOwner>? _onDeactivation;
         private readonly List<MonolithAction> _actions = new();
+        private Tween<Vector3>? _activeTween;
+
+        [field: SerializeField]
+        public string Id { get; private set; } = string.Empty;
 
         private void Update()
         {
@@ -38,9 +63,27 @@ namespace Weaver.Visuals.Monolith
             if (_timeUntilNextAction > 0)
                 return;
             
-            // If there are no actions to perform, skip.
+            // If there are no actions to perform, start running inactivity behaviour.
             if (actionCount == 0)
+            {
+                // Exit early if we're already deactivating, we don't need to check if we're deactivating.
+                if (_deactivating)
+                    return;
+                
+                _timeSpentInactive += Time.deltaTime;
+                
+                // If we haven't hit our deactivity threshold, skip.
+                if (_inactivityTimeUntilDeactivation > _timeSpentInactive)
+                    return;
+                
+                _deactivating = true;
+                _timeSpentInactive = 0;
+                Deactivate();
                 return;
+            }
+
+            _deactivating = false;
+            _timeSpentInactive = 0;
             
             var action = _actions[0];
             _actions.Remove(action);
@@ -73,15 +116,44 @@ namespace Weaver.Visuals.Monolith
             if (action.Type == MonolithActionType.Created && physicalItem == null)
             {
                 action.PhysicalNode.AddItem(action.Item).RunHeartbeat();
+                PerformActionVisualization(action);
             }
             else if (action.Type == MonolithActionType.Changed && physicalItem != null)
             {
                 physicalItem.RunHeartbeat();
+                PerformActionVisualization(action);
             }
             else if (action.Type == MonolithActionType.Destroyed)
             {
                 action.PhysicalNode.RemoveItem(action.Item);
+                PerformActionVisualization(action);
             }
+        }
+
+        private void PerformActionVisualization(MonolithAction action)
+        {
+            if (_currentlyMovingTo != action.PhysicalNode)
+            {
+                if (_activeTween != null)
+                    _activeTween.Cancel();
+                
+                _currentlyMovingTo = action.PhysicalNode;
+                
+                // Move to the node
+                // Generate a random point away from the center of the node,
+                // add that to the node's position, then tween to that location.
+                var point = (_random?.Vector3() ?? Random.onUnitSphere) * _idealDistanceFromNode;
+                var targetPosition = action.PhysicalNode.transform.position + point;
+                _activeTween = this.TweenPosition(targetPosition, _timeToReachTarget).SetEase(_movementEasing);
+            }
+            
+            // TODO: Flash to item
+            _ = true;
+        }
+
+        private void Deactivate()
+        {
+            _onDeactivation?.Invoke(this);
         }
 
         public void AddAction(MonolithNode node, WeaverItem item, MonolithActionType type)
@@ -94,7 +166,6 @@ namespace Weaver.Visuals.Monolith
                 // just chill! We want to ensure that the owner who created the file handles it.
                 if (action.Type == MonolithActionType.Created && type == MonolithActionType.Changed)
                     return;
-                
                 
                 _actions.Remove(action);
             }
@@ -135,6 +206,13 @@ namespace Weaver.Visuals.Monolith
                 _actionPool.Release(action);
             }
             ListPool<MonolithAction>.Release(actionsToRemove);
+        }
+
+        public void SetData(string id, System.Random random, Action<MonolithOwner>? onDeactivation)
+        {
+            Id = id;
+            _random = random;
+            _onDeactivation = onDeactivation;
         }
     }
 }
