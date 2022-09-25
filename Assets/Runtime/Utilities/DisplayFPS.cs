@@ -25,7 +25,7 @@ namespace Weaver.Utilities
                 return;
 
             var framerate = _samples / _sampleFrameTime;
-            _text.text = $"{framerate:000}";
+            _text.text = $"{(int)framerate}";
 
             // Reset the values
             _samples = 0;
