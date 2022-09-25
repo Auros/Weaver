@@ -39,9 +39,12 @@ namespace Weaver.Models
         /// </summary>
         public int Generation { get; }
         
-        public WeaverNode(string name, WeaverOwner owner, WeaverItem[] items, WeaverNode[] children, int generation)
+        public string Hash { get; }
+        
+        public WeaverNode(string name, string hash, WeaverOwner owner, WeaverItem[] items, WeaverNode[] children, int generation)
         {
             Name = name;
+            Hash = hash;
             Owner = owner;
             Items = items;
             Children = children;

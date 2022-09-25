@@ -34,13 +34,18 @@ namespace Weaver.Utilities
             
             _ = UniTask.RunOnThreadPool(async () =>
             {
+                
                 var repo = _repositoryPath;
                 if (!_repositoryPath.EndsWith("\\.git"))
                     repo += "\\.git";
                 // Build the weaver assembler on a separate thread.
                 // It can take quite some time for it to build the mappings for every object.
                 // I might make the snapshots lazy loaded in the future.
-                var assembler = Directory.Exists(repo) ? new WeaverAssembler(repo) : null;
+                var assembler = Directory.Exists(repo) ? await WeaverAssembler.Create(repo) : null;
+                
+                _lastAssembler?.Dispose();
+                _lastAssembler = null;
+
                 _lastAssembler = assembler;
 
                 await UniTask.SwitchToMainThread();

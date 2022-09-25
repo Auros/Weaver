@@ -14,7 +14,6 @@ namespace Weaver.Visuals.Monolith
         [SerializeField]
         private AnimationCurve _alphaCurve = null!;
 
-        private Color _color;
         private Transform? _source;
         private Transform? _destination;
         private float _timeSinceFlashStart;
@@ -52,7 +51,6 @@ namespace Weaver.Visuals.Monolith
 
         public void Flash(Transform source, Transform destination, Color color, Action<MonolithLaser>? onComplete = null)
         {
-            _color = color;
             _source = source;
             _onComplete = onComplete;
             _destination = destination;

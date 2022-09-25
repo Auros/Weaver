@@ -23,6 +23,9 @@ namespace Weaver.Visuals.Monolith
         private IncludeDebugInfo _debug = null!;
         
         [SerializeField]
+        private Transform _column = null!;
+
+        [SerializeField]
         private LineRenderer _parentLinkerLine = null!;
 
         [SerializeField, Min(0)]
@@ -36,14 +39,17 @@ namespace Weaver.Visuals.Monolith
 
         [SerializeField]
         private EaseType _itemMovementEasing = EaseType.CubicOut;
-        
+
+        [SerializeField]
+        private bool _optimizeRendering;
+
         private MonolithNode? _nodeParent;
         private float _timeSinceParentConnection;
         private readonly Vector3[] _linePositionSetter = new Vector3[2];
-
+        
         public string Path { get; private set; } = string.Empty;
 
-        public bool HasBuiltLine => _timeSinceParentConnection >= _timeToConnectFromParent;
+        public bool HasBuiltLine => _timeSinceParentConnection >= _timeToConnectFromParent || _optimizeRendering;
 
         public List<MonolithItem> ActiveItems { get; set; } = new();
 
@@ -149,27 +155,61 @@ namespace Weaver.Visuals.Monolith
             // lifetime tracker for ourselves.
             if (_nodeParent == null || _nodeParent.HasBuiltLine)
                 _timeSinceParentConnection += Time.deltaTime;
-            
-            // If there's no line, there's nothing left for us to update.
-            if (_parentLinkerLine == null)
-                return;
 
-            var hasParent = _nodeParent != null;
-            
-            // Update the line renderer to show ourselves and our parent as being "connected".
-            // The tweening slowly moves the end of the line from the parent source to ourselves, to have a more
-            // animated effect when nodes spawn in.
-            _linePositionSetter[0] = hasParent
-                ? _timeSinceParentConnection >= _timeToConnectFromParent 
-                    ? transform.position
-                        : Vector3.Lerp( 
-                            _nodeParent!.transform.position, transform.position, 
-                            Easer.Apply(_connectionEasing, 
-                            Mathf.InverseLerp(0f, _timeToConnectFromParent, _timeSinceParentConnection))) 
-                : Vector3.zero;
-            
-            _linePositionSetter[1] = hasParent ? _nodeParent!.transform.position : Vector3.zero;
-            _parentLinkerLine.SetPositions(_linePositionSetter);
+            if (_optimizeRendering)
+            {
+                // If there's no column, there's nothing left for us to update.
+                if (_column == null)
+                    return;
+
+                if (_parentLinkerLine != null)
+                    _parentLinkerLine.enabled = false;
+                    
+                _column.gameObject.SetActive(true);
+                if (_nodeParent == null)
+                {
+                    _column.localScale = Vector3.zero;
+                    return;
+                }
+
+                var ourPosition = transform.position;
+                var parentTransform = _nodeParent.transform;
+                var parentPosition = parentTransform.position;
+                
+                _column.LookAt(parentTransform);
+                
+                var columnScale = _column.localScale;
+                var distance = Vector3.Distance(parentPosition, ourPosition);
+                _column.position = Vector3.Lerp(parentPosition, ourPosition, 0.5f);
+                _column.localScale = new Vector3(columnScale.x, columnScale.y, distance / 2f);
+            }
+            else
+            {
+                // If there's no line, there's nothing left for us to update.
+                if (_parentLinkerLine == null)
+                    return;
+                
+                if (_column != null)
+                    _column.gameObject.SetActive(false);
+
+                _parentLinkerLine.enabled = true;
+                var hasParent = _nodeParent != null;
+                
+                // Update the line renderer to show ourselves and our parent as being "connected".
+                // The tweening slowly moves the end of the line from the parent source to ourselves, to have a more
+                // animated effect when nodes spawn in.
+                _linePositionSetter[0] = hasParent
+                    ? _timeSinceParentConnection >= _timeToConnectFromParent 
+                        ? transform.position
+                            : Vector3.Lerp( 
+                                _nodeParent!.transform.position, transform.position, 
+                                Easer.Apply(_connectionEasing, 
+                                Mathf.InverseLerp(0f, _timeToConnectFromParent, _timeSinceParentConnection))) 
+                    : Vector3.zero;
+                
+                _linePositionSetter[1] = hasParent ? _nodeParent!.transform.position : Vector3.zero;
+                _parentLinkerLine.SetPositions(_linePositionSetter);
+            }
         }
     }
 }
