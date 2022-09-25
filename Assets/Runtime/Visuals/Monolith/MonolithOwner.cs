@@ -78,7 +78,7 @@ namespace Weaver.Visuals.Monolith
         [field: SerializeField]
         public string Id { get; private set; } = string.Empty;
 
-        private void OnEnable()
+        private void Start()
         {
             TweenIn();
         }
