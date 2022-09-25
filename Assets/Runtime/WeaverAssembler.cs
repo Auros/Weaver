@@ -77,9 +77,7 @@ namespace Weaver
             var ms = sw.Elapsed.TotalMilliseconds;
 
             var hi = $"{ms}ms";
-
             UnityEngine.Debug.Log(hi);
-            await System.IO.File.WriteAllTextAsync(@"C:\Users\Auros\Desktop\time.txt", hi);
             return assembler;
         }
 
