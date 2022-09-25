@@ -1,0 +1,17 @@
+{
+    "name": "Weaver.Tweening",
+    "rootNamespace": "Weaver.Tweening",
+    "references": [
+        "GUID:6f0786a5bbd4d44b992c72105d6500fe",
+        "GUID:b0214a6008ed146ff8f122a6a9c2f6cc"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

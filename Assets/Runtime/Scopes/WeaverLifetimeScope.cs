@@ -4,12 +4,16 @@ using UnityEngine.Pool;
 using VContainer;
 using VContainer.Unity;
 using Weaver.Models;
+using Weaver.Tweening;
 using Weaver.Visuals.Monolith;
 
 namespace Weaver.Scopes
 {
     public class WeaverLifetimeScope : LifetimeScope
     {
+        [SerializeField]
+        private TweeningController _tweeningController = null!;
+        
         [SerializeField]
         private MonoTimeController _monoTimeController = null!;
 
@@ -24,12 +28,13 @@ namespace Weaver.Scopes
 
         [SerializeField]
         private MonolithLaserPoolController _laserPoolController = null!;
-        
+
         protected override void Configure(IContainerBuilder builder)
         {
             builder.RegisterEntryPoint<WeaverStateDaemon>();
             builder.RegisterComponent<IClock>(_monoTimeController);
 
+            builder.RegisterComponent(_tweeningController);
             builder.RegisterComponent(_itemPoolController);
             builder.RegisterComponent(_nodePoolController);
             builder.RegisterComponent(_ownerPoolController);
@@ -40,6 +45,11 @@ namespace Weaver.Scopes
                     () => new MonolithAction(),
                     actionOnRelease: action => action.Reset()
                     ),
+                Lifetime.Singleton);
+            builder.Register<IObjectPool<TweenContext>>(
+                _ =>new ObjectPool<TweenContext>(
+                    () => new TweenContext()
+                ),
                 Lifetime.Singleton);
 
             var options = builder.RegisterMessagePipe();

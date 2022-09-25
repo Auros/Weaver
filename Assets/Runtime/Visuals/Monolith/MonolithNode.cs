@@ -5,6 +5,7 @@ using JetBrains.Annotations;
 using UnityEngine;
 using VContainer;
 using Weaver.Models;
+using Weaver.Tweening;
 using Weaver.Visuals.Utilities;
 
 namespace Weaver.Visuals.Monolith
@@ -12,6 +13,9 @@ namespace Weaver.Visuals.Monolith
     [PublicAPI]
     public class MonolithNode : MonoBehaviour
     {
+        [Inject]
+        private TweeningController _tweeningController = null!;
+        
         [Inject]
         private MonolithItemPoolController _monolithItemPoolController = null!;
    
@@ -143,10 +147,16 @@ namespace Weaver.Visuals.Monolith
                 if (float.IsNaN(x))
                     break;
 
-                ActiveItems[i].MoveTo(
+                // Tween the item to its new position.
+                var item = ActiveItems[i];
+                _tweeningController.Clear(item);
+                _tweeningController.AddTween(
+                    item.transform.localPosition,
                     new Vector3(x, y, z) * radiusModifier,
+                    vector => item.transform.localPosition = vector,
                     _itemTweeningMovementSpeed,
-                    _itemMovementEasing
+                    _itemMovementEasing,
+                    item
                 );
             }
         }

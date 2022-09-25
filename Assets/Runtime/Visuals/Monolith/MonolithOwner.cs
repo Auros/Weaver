@@ -6,12 +6,16 @@ using UnityEngine;
 using UnityEngine.Pool;
 using VContainer;
 using Weaver.Models;
+using Weaver.Tweening;
 using Random = UnityEngine.Random;
 
 namespace Weaver.Visuals.Monolith
 {
     public class MonolithOwner : MonoBehaviour
     {
+        [Inject]
+        private readonly TweeningController _tweeningController = null!;
+        
         [Inject]
         private readonly IObjectPool<MonolithAction> _actionPool = null!;
 
@@ -62,23 +66,15 @@ namespace Weaver.Visuals.Monolith
         
         private bool _deactivating;
         private System.Random? _random;
-        private Vector3 _startPosition;
-        private Vector3 _targetPosition;
         private float _timeSpentInactive;
         private int _actionCountLastFrame;
         private float _timeUntilNextAction;
-        private float _timeSinceStartedMovement;
+        private float _timeSinceDeactivation;
         private MonolithNode? _currentlyMovingTo;
         private Action<MonolithOwner>? _onDeactivation;
         private readonly List<MonolithAction> _actions = new();
         private readonly List<MonolithLaser> _activeLasers = new();
 
-        private bool _runningScale;
-        private Vector3 _startScale;
-        private Vector3 _targetScale;
-        private float _timeSinceStartedScale;
-        private float _timeSinceDeactivation;
-        
         [field: SerializeField]
         public string Id { get; private set; } = string.Empty;
 
@@ -89,19 +85,18 @@ namespace Weaver.Visuals.Monolith
 
         private void TweenIn()
         {
-            _runningScale = true;
-            _targetScale = _spawnScaleTarget;
-            _startScale = transform.localScale;
-            _timeSinceStartedScale = 0;
-            _timeSinceDeactivation = 0;
+            _tweeningController.AddTween(
+                transform.localScale,
+                _spawnScaleTarget,
+                vector => transform.localScale = vector,
+                _timeForSpawn,
+                _spawnEasing,
+                this
+            );
         }
 
         private void Update()
         {
-            // This class has gotten a little overrespinsible, handling both tweening and the owner events.
-            // I'm considering writing my own tweening library, because it seems like most libraries sacrifice
-            // performance for the sake of convenience.
-
             if (_deactivating)
             {
                 _timeSinceDeactivation += Time.deltaTime;
@@ -110,39 +105,6 @@ namespace Weaver.Visuals.Monolith
                 {
                     Deactivate();
                     _deactivating = false;
-                }
-            }
-            
-            if (_currentlyMovingTo != null)
-            {
-                if (_timeSinceStartedMovement >= _timeToReachTarget)
-                {
-                    _currentlyMovingTo = null;
-                }
-                else
-                {
-                    transform.position = Vector3.Lerp(_startPosition, _targetPosition, Easer.Apply(_movementEasing, _timeSinceStartedMovement / _timeToReachTarget));
-                    _timeSinceStartedMovement += Time.deltaTime;
-                }
-            }
-
-            if (_runningScale)
-            {
-                transform.localScale = Vector3.Lerp(_startScale, _targetScale,
-                    Easer.Apply(_spawnEasing, _timeSinceStartedScale / _timeForSpawn));
-                _timeSinceStartedScale += Time.deltaTime;
-                
-                // If the tween isn't finished, skip.
-                if (_timeSinceStartedScale >= _timeForSpawn)
-                {
-                    transform.localScale = _targetScale;
-                    _runningScale = false;
-
-                    if (_deactivating)
-                    {
-                        _particleSystem.Stop();
-                        _particleSystem.Play();
-                    }
                 }
             }
             
@@ -176,15 +138,24 @@ namespace Weaver.Visuals.Monolith
                 if (_inactivityTimeUntilDeactivation > _timeSpentInactive)
                     return;
                 
+                // Start the deactivation process for this owner.
+                
                 _deactivating = true;
                 _timeSpentInactive = 0;
-
-                _runningScale = true;
-                _targetScale = _despawnScaleTarget;
-                _startScale = transform.localScale;
-                _timeSinceStartedScale = 0;
-                _timeSinceDeactivation = 0;
                 
+                _tweeningController.AddTween(
+                    transform.localScale,
+                    _despawnScaleTarget,
+                    vector => transform.localScale = vector,
+                    _timeForSpawn,
+                    _spawnEasing,
+                    this,
+                    () =>
+                    {
+                        _particleSystem.Stop();
+                        _particleSystem.Play();
+                    }
+                );
                 return;
             }
 
@@ -252,9 +223,14 @@ namespace Weaver.Visuals.Monolith
                 var point = Random.onUnitSphere * _idealDistanceFromNode;
                 var targetPosition = action.PhysicalNode.transform.position + point;
 
-                _startPosition = transform.position;
-                _targetPosition = targetPosition;
-                _timeSinceStartedMovement = 0;
+                _tweeningController.AddTween(
+                    transform.position,
+                    targetPosition,
+                    vector => transform.position = vector,
+                    _timeToReachTarget,
+                    _movementEasing,
+                    this
+                );
             }
 
             var laser = _laserPoolController.Get();
