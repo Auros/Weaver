@@ -37,6 +37,9 @@ namespace Weaver.Visuals.Monolith
         private float _nodeSpawnOffset = 5f;
 
         [SerializeField]
+        private float _nodeMovementVectorForce = 1f;
+
+        [SerializeField]
         private string _seed = nameof(MonolithVisualiuzer);
 
         [SerializeField]
@@ -75,17 +78,17 @@ namespace Weaver.Visuals.Monolith
             
             var nodePos = isAncestorChild ? physicalTransform.localPosition : parentTransform!.localPosition;
             var ancestorPos = _physicalNodes[string.Empty].transform.localPosition;
-            var normalizedMoveVector = (nodePos - ancestorPos).normalized;
+            var nodeMovementVectorForce = (nodePos - ancestorPos).normalized * _nodeMovementVectorForce;
             var parentPos = isAncestorChild ? ancestorPos : parentTransform!.localPosition;
             
             var calculatedPos = isAncestorChild switch
             {
-                true => physicalTransform.TransformDirection(normalizedMoveVector * _nodeSpawnOffset + _random.Vector3() * _nodeSpawnDistance),
-                false => parentPos + parentTransform!.TransformDirection(normalizedMoveVector * _nodeSpawnOffset + _random.Vector3() * _nodeSpawnDistance)
+                true => physicalTransform.TransformDirection(nodeMovementVectorForce * _nodeSpawnOffset + _random.Vector3() * _nodeSpawnDistance),
+                false => parentPos + parentTransform!.TransformDirection(nodeMovementVectorForce * _nodeSpawnOffset + _random.Vector3() * _nodeSpawnDistance)
             };
 
             physicalTransform.localPosition = calculatedPos;
-            physical.Launch(normalizedMoveVector * _nodeLaunchForce);
+            physical.Launch(nodeMovementVectorForce * _nodeLaunchForce);
             
             foreach (var item in node.Items)
                 CreateItem(node, item);

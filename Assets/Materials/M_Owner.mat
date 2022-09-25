@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: M_NodeItem
+  m_Name: M_Owner
   m_Shader: {fileID: 4800000, guid: 8d2bb70cbf9db8d4da26e15b26e74248, type: 3}
   m_ValidKeywords:
   - _EMISSION
@@ -16,7 +16,7 @@ Material:
   m_LightmapFlags: 2
   m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: 2001
+  m_CustomRenderQueue: 2002
   stringTagMap:
     RenderType: Opaque
   disabledShaderPasses: []
@@ -99,7 +99,7 @@ Material:
     - _Metallic: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.005
-    - _QueueOffset: 1
+    - _QueueOffset: 2
     - _ReceiveShadows: 0
     - _Shininess: 0
     - _Smoothness: 0.488
@@ -114,7 +114,7 @@ Material:
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _EmissionColor: {r: 0.5052607, g: 0, b: 2.6082377, a: 1}
+    - _EmissionColor: {r: 19.698313, g: 0.0000029939831, b: 0, a: 1}
     - _SpecColor: {r: 0.1999988, g: 0.1999988, b: 0.1999988, a: 0.488}
   m_BuildTextureStacks: []
 --- !u!114 &6554417763041992227

@@ -16,6 +16,9 @@ namespace Weaver.Visuals.Monolith
         [Inject]
         private readonly IObjectPool<MonolithAction> _actionPool = null!;
 
+        [Inject]
+        private readonly MonolithLaserPoolController _laserPoolController = null!;
+
         [SerializeField]
         private AnimationCurve _actionCurve = null!;
 
@@ -30,6 +33,15 @@ namespace Weaver.Visuals.Monolith
 
         [SerializeField]
         private float _inactivityTimeUntilDeactivation = 5f;
+
+        [SerializeField]
+        private Color _itemAddedColor = Color.green;
+
+        [SerializeField]
+        private Color _itemChangedColor = Color.gray;
+
+        [SerializeField]
+        private Color _itemDeletedColor = Color.red;
         
         private bool _deactivating;
         private System.Random? _random;
@@ -39,6 +51,7 @@ namespace Weaver.Visuals.Monolith
         private MonolithNode? _currentlyMovingTo;
         private Action<MonolithOwner>? _onDeactivation;
         private readonly List<MonolithAction> _actions = new();
+        private readonly List<MonolithLaser> _activeLasers = new();
         private Tween<Vector3>? _activeTween;
 
         [field: SerializeField]
@@ -115,22 +128,23 @@ namespace Weaver.Visuals.Monolith
             // ReSharper disable once ConvertIfStatementToSwitchStatement
             if (action.Type == MonolithActionType.Created && physicalItem == null)
             {
-                action.PhysicalNode.AddItem(action.Item).RunHeartbeat();
-                PerformActionVisualization(action);
+                physicalItem = action.PhysicalNode.AddItem(action.Item);
+                physicalItem.RunHeartbeat();
+                PerformActionVisualization(action, physicalItem.transform, _itemAddedColor);
             }
             else if (action.Type == MonolithActionType.Changed && physicalItem != null)
             {
                 physicalItem.RunHeartbeat();
-                PerformActionVisualization(action);
+                PerformActionVisualization(action, physicalItem.transform, _itemChangedColor);
             }
             else if (action.Type == MonolithActionType.Destroyed)
             {
                 action.PhysicalNode.RemoveItem(action.Item);
-                PerformActionVisualization(action);
+                PerformActionVisualization(action, action.PhysicalNode.transform, _itemDeletedColor);
             }
         }
 
-        private void PerformActionVisualization(MonolithAction action)
+        private void PerformActionVisualization(MonolithAction action, Transform on, Color color)
         {
             if (_currentlyMovingTo != action.PhysicalNode)
             {
@@ -142,13 +156,20 @@ namespace Weaver.Visuals.Monolith
                 // Move to the node
                 // Generate a random point away from the center of the node,
                 // add that to the node's position, then tween to that location.
-                var point = (_random?.Vector3() ?? Random.onUnitSphere) * _idealDistanceFromNode;
+                var point = Random.onUnitSphere * _idealDistanceFromNode;
                 var targetPosition = action.PhysicalNode.transform.position + point;
                 _activeTween = this.TweenPosition(targetPosition, _timeToReachTarget).SetEase(_movementEasing);
             }
-            
-            // TODO: Flash to item
-            _ = true;
+
+            var laser = _laserPoolController.Get();
+            _activeLasers.Add(laser);
+            laser.Flash(transform, on, color, LaserFinished);
+        }
+
+        private void LaserFinished(MonolithLaser laser)
+        {
+            _activeLasers.Remove(laser);
+            _laserPoolController.Release(laser);
         }
 
         private void Deactivate()

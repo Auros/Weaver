@@ -21,6 +21,9 @@ namespace Weaver.Scopes
 
         [SerializeField]
         private MonolithOwnerPoolController _ownerPoolController = null!;
+
+        [SerializeField]
+        private MonolithLaserPoolController _laserPoolController = null!;
         
         protected override void Configure(IContainerBuilder builder)
         {
@@ -30,6 +33,7 @@ namespace Weaver.Scopes
             builder.RegisterComponent(_itemPoolController);
             builder.RegisterComponent(_nodePoolController);
             builder.RegisterComponent(_ownerPoolController);
+            builder.RegisterComponent(_laserPoolController);
             
             builder.Register<IObjectPool<MonolithAction>>(
                 _ =>new ObjectPool<MonolithAction>(
