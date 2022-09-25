@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using ElRaccoone.Tweens;
 using ElRaccoone.Tweens.Core;
 using UnityEngine;
 using UnityEngine.Pool;
@@ -18,6 +17,9 @@ namespace Weaver.Visuals.Monolith
 
         [Inject]
         private readonly MonolithLaserPoolController _laserPoolController = null!;
+
+        [SerializeField]
+        private ParticleSystem _particleSystem = null!;
 
         [SerializeField]
         private AnimationCurve _actionCurve = null!;
@@ -42,6 +44,21 @@ namespace Weaver.Visuals.Monolith
 
         [SerializeField]
         private Color _itemDeletedColor = Color.red;
+
+        [SerializeField]
+        private float _timeForSpawn = 1f;
+
+        [SerializeField]
+        private EaseType _spawnEasing = EaseType.Linear;
+
+        [SerializeField]
+        private Vector3 _spawnScaleTarget = Vector3.one;
+
+        [SerializeField]
+        private Vector3 _despawnScaleTarget = Vector3.zero;
+
+        [SerializeField]
+        private float _postDeactivationLifetime = 2f;
         
         private bool _deactivating;
         private System.Random? _random;
@@ -55,15 +72,46 @@ namespace Weaver.Visuals.Monolith
         private Action<MonolithOwner>? _onDeactivation;
         private readonly List<MonolithAction> _actions = new();
         private readonly List<MonolithLaser> _activeLasers = new();
+
+        private bool _runningScale;
+        private Vector3 _startScale;
+        private Vector3 _targetScale;
+        private float _timeSinceStartedScale;
+        private float _timeSinceDeactivation;
         
         [field: SerializeField]
         public string Id { get; private set; } = string.Empty;
 
+        private void OnEnable()
+        {
+            TweenIn();
+        }
+
+        private void TweenIn()
+        {
+            _runningScale = true;
+            _targetScale = _spawnScaleTarget;
+            _startScale = transform.localScale;
+            _timeSinceStartedScale = 0;
+            _timeSinceDeactivation = 0;
+        }
+
         private void Update()
         {
-            // This class has gotten a little overrrespinsible, handling both tweening and the owner events.
+            // This class has gotten a little overrespinsible, handling both tweening and the owner events.
             // I'm considering writing my own tweening library, because it seems like most libraries sacrifice
             // performance for the sake of convenience.
+
+            if (_deactivating)
+            {
+                _timeSinceDeactivation += Time.deltaTime;
+
+                if (_timeSinceDeactivation > _postDeactivationLifetime)
+                {
+                    Deactivate();
+                    _deactivating = false;
+                }
+            }
             
             if (_currentlyMovingTo != null)
             {
@@ -75,6 +123,26 @@ namespace Weaver.Visuals.Monolith
                 {
                     transform.position = Vector3.Lerp(_startPosition, _targetPosition, Easer.Apply(_movementEasing, _timeSinceStartedMovement / _timeToReachTarget));
                     _timeSinceStartedMovement += Time.deltaTime;
+                }
+            }
+
+            if (_runningScale)
+            {
+                transform.localScale = Vector3.Lerp(_startScale, _targetScale,
+                    Easer.Apply(_spawnEasing, _timeSinceStartedScale / _timeForSpawn));
+                _timeSinceStartedScale += Time.deltaTime;
+                
+                // If the tween isn't finished, skip.
+                if (_timeSinceStartedScale >= _timeForSpawn)
+                {
+                    transform.localScale = _targetScale;
+                    _runningScale = false;
+
+                    if (_deactivating)
+                    {
+                        _particleSystem.Stop();
+                        _particleSystem.Play();
+                    }
                 }
             }
             
@@ -110,10 +178,19 @@ namespace Weaver.Visuals.Monolith
                 
                 _deactivating = true;
                 _timeSpentInactive = 0;
-                Deactivate();
+
+                _runningScale = true;
+                _targetScale = _despawnScaleTarget;
+                _startScale = transform.localScale;
+                _timeSinceStartedScale = 0;
+                _timeSinceDeactivation = 0;
+                
                 return;
             }
 
+            if (_deactivating)
+                TweenIn();
+            
             _deactivating = false;
             _timeSpentInactive = 0;
             
