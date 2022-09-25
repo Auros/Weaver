@@ -779,7 +779,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f1fa058ed6de4bbcb27e080232fa52b1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _repositoryPath: P:\Development\Various Forks\ChroMapper
+  _repositoryPath: P:\Development\Beat Saber\Mods\SiraUtil
   _resetTimeOnChange: 1
 --- !u!1 &476054963
 GameObject:
@@ -790,9 +790,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 476054964}
+  - component: {fileID: 476054967}
   - component: {fileID: 476054966}
   - component: {fileID: 476054965}
-  - component: {fileID: 476054967}
   - component: {fileID: 476054968}
   m_Layer: 0
   m_Name: 'Monolith Item '
@@ -2470,8 +2470,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2119189720}
-  - component: {fileID: 2119189721}
   - component: {fileID: 2119189722}
+  - component: {fileID: 2119189721}
   m_Layer: 0
   m_Name: 'Monolith Laser '
   m_TagString: Untagged

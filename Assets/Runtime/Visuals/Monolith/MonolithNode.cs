@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using ElRaccoone.Tweens;
 using ElRaccoone.Tweens.Core;
 using JetBrains.Annotations;
 using UnityEngine;
@@ -43,6 +42,7 @@ namespace Weaver.Visuals.Monolith
         [SerializeField]
         private bool _optimizeRendering;
 
+        private bool _isMoving;
         private MonolithNode? _nodeParent;
         private float _timeSinceParentConnection;
         private readonly Vector3[] _linePositionSetter = new Vector3[2];
@@ -68,6 +68,7 @@ namespace Weaver.Visuals.Monolith
         }
 
         public MonolithNode UnlinkParent()
+        
         {
             _nodeParent = null;
             return this;
@@ -142,10 +143,11 @@ namespace Weaver.Visuals.Monolith
                 if (float.IsNaN(x))
                     break;
 
-                //ActiveItems[i].transform.localPosition = new Vector3(x, y, z) * radiusModifier;
-                ActiveItems[i].transform
-                    .TweenLocalPosition(new Vector3(x, y, z) * radiusModifier, _itemTweeningMovementSpeed)
-                    .SetEase(_itemMovementEasing);
+                ActiveItems[i].MoveTo(
+                    new Vector3(x, y, z) * radiusModifier,
+                    _itemTweeningMovementSpeed,
+                    _itemMovementEasing
+                );
             }
         }
 

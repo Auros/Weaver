@@ -45,20 +45,39 @@ namespace Weaver.Visuals.Monolith
         
         private bool _deactivating;
         private System.Random? _random;
+        private Vector3 _startPosition;
+        private Vector3 _targetPosition;
         private float _timeSpentInactive;
         private int _actionCountLastFrame;
         private float _timeUntilNextAction;
+        private float _timeSinceStartedMovement;
         private MonolithNode? _currentlyMovingTo;
         private Action<MonolithOwner>? _onDeactivation;
         private readonly List<MonolithAction> _actions = new();
         private readonly List<MonolithLaser> _activeLasers = new();
-        private Tween<Vector3>? _activeTween;
-
+        
         [field: SerializeField]
         public string Id { get; private set; } = string.Empty;
 
         private void Update()
         {
+            // This class has gotten a little overrrespinsible, handling both tweening and the owner events.
+            // I'm considering writing my own tweening library, because it seems like most libraries sacrifice
+            // performance for the sake of convenience.
+            
+            if (_currentlyMovingTo != null)
+            {
+                if (_timeSinceStartedMovement >= _timeToReachTarget)
+                {
+                    _currentlyMovingTo = null;
+                }
+                else
+                {
+                    transform.position = Vector3.Lerp(_startPosition, _targetPosition, Easer.Apply(_movementEasing, _timeSinceStartedMovement / _timeToReachTarget));
+                    _timeSinceStartedMovement += Time.deltaTime;
+                }
+            }
+            
             var actionCount = _actions.Count;
             
             // If the number of actions has recently grown, recalculate the time until next action.
@@ -148,9 +167,6 @@ namespace Weaver.Visuals.Monolith
         {
             if (_currentlyMovingTo != action.PhysicalNode)
             {
-                if (_activeTween != null)
-                    _activeTween.Cancel();
-                
                 _currentlyMovingTo = action.PhysicalNode;
                 
                 // Move to the node
@@ -158,7 +174,10 @@ namespace Weaver.Visuals.Monolith
                 // add that to the node's position, then tween to that location.
                 var point = Random.onUnitSphere * _idealDistanceFromNode;
                 var targetPosition = action.PhysicalNode.transform.position + point;
-                _activeTween = this.TweenPosition(targetPosition, _timeToReachTarget).SetEase(_movementEasing);
+
+                _startPosition = transform.position;
+                _targetPosition = targetPosition;
+                _timeSinceStartedMovement = 0;
             }
 
             var laser = _laserPoolController.Get();
