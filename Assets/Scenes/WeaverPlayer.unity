@@ -779,7 +779,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f1fa058ed6de4bbcb27e080232fa52b1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _repositoryPath: P:\Development\Beat Saber\Mods\SiraUtil
+  _repositoryPath: P:\Development\Beat Saber\Forks\BeatTogether.DedicatedServer
   _resetTimeOnChange: 1
 --- !u!1 &476054963
 GameObject:

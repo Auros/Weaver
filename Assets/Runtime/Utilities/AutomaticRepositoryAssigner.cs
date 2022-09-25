@@ -41,7 +41,7 @@ namespace Weaver.Utilities
                 // Build the weaver assembler on a separate thread.
                 // It can take quite some time for it to build the mappings for every object.
                 // I might make the snapshots lazy loaded in the future.
-                var assembler = Directory.Exists(repo) ? await WeaverAssembler.Create(repo) : null;
+                var assembler = Directory.Exists(repo) ? await WeaverAssembler.Create(repo, WeaverAssembler.LoadType.SynchronousLookBehind) : null;
                 
                 _lastAssembler?.Dispose();
                 _lastAssembler = null;

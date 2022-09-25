@@ -28,9 +28,9 @@ namespace Weaver
             Snapshots = new WeaverSnapshot[size];
         }
         
-        public static async UniTask<WeaverAssembler> Create(string filePath)
+        public static async UniTask<WeaverAssembler> Create(string filePath, LoadType loadType = LoadType.Synchronous)
         {
-            Stopwatch sw = Stopwatch.StartNew();
+            var sw = Stopwatch.StartNew();
             
             Repository repo = new(filePath);
 
@@ -42,42 +42,64 @@ namespace Weaver
             var startTime = commits[0].Committer.When.ToUnixTimeSeconds();
             var endTime = commits[^1].Committer.When.ToUnixTimeSeconds();
 
-            bool asynchronous = false;
-
-            if (asynchronous)
+            // Generate every snapshot from each commit
+            switch (loadType)
             {
-                // Generate every snapshot from each commit
-                var result = Parallel.ForEach(Enumerable.Range(0, assembler.Snapshots.Length), i =>
-                {
-                    assembler.Snapshots[i] = GenerateSnapshotFromCommit(
-                        commits[i],
-                        null,
-                        false,
-                        // ReSharper disable once AccessToModifiedClosure
-                        ref startTime,
-                        // ReSharper disable once AccessToModifiedClosure
-                        ref endTime
-                    );
-                });
+                case LoadType.Synchronous:
+                    for (int i = 0; i < assembler.Snapshots.Length; i++)
+                        assembler.Snapshots[i] = GenerateSnapshotFromCommit(commits[i], null, false, ref startTime, ref endTime);
+                    break;
+                case LoadType.Parallel:
+                    var result = Parallel.ForEach(Enumerable.Range(0, assembler.Snapshots.Length), i =>
+                    {
+                        assembler.Snapshots[i] = GenerateSnapshotFromCommit(
+                            commits[i],
+                            null,
+                            false,
+                            // ReSharper disable once AccessToModifiedClosure
+                            ref startTime,
+                            // ReSharper disable once AccessToModifiedClosure
+                            ref endTime
+                        );
+                    });
     
-                while (!result.IsCompleted)
-                {
-                    await UniTask.NextFrame();
-                }
+                    while (!result.IsCompleted)
+                        await UniTask.NextFrame();
+                    break;
+                case LoadType.LazyLoaded:
+                    for (int i = 0; i < assembler.Snapshots.Length; i++)
+                        assembler.Snapshots[i] = GenerateSnapshotFromCommit(commits[i], null, true, ref startTime, ref endTime);
+                    break;
+                case LoadType.ParallelLazyLoaded:
+                    var resultLazyLoaded = Parallel.ForEach(Enumerable.Range(0, assembler.Snapshots.Length), i =>
+                    {
+                        assembler.Snapshots[i] = GenerateSnapshotFromCommit(
+                            commits[i],
+                            null,
+                            true,
+                            // ReSharper disable once AccessToModifiedClosure
+                            ref startTime,
+                            // ReSharper disable once AccessToModifiedClosure
+                            ref endTime
+                        );
+                    });
+                    while (!resultLazyLoaded.IsCompleted)
+                        await UniTask.NextFrame();
+                    break;
+                case LoadType.SynchronousLookBehind:
+                    WeaverSnapshot? previous = null;
+                    for (int i = 0; i < assembler.Snapshots.Length; i++)
+                        previous = assembler.Snapshots[i] = GenerateSnapshotFromCommit(commits[i], previous, false, ref startTime, ref endTime);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(loadType), loadType, null);
             }
-            else
-            {
-                WeaverSnapshot? previous = null;
-                for (int i = 0; i < assembler.Snapshots.Length; i++)
-                    previous = assembler.Snapshots[i] = GenerateSnapshotFromCommit(commits[i], previous, false, ref startTime, ref endTime);
-            }
+            
             sw.Stop();
-
-
             var ms = sw.Elapsed.TotalMilliseconds;
-
             var hi = $"{ms}ms";
             UnityEngine.Debug.Log(hi);
+
             return assembler;
         }
 
@@ -130,7 +152,7 @@ namespace Weaver
                 .ToArray();
             
             var children = tree
-                .Where(t => t.TargetType is TreeEntryTargetType.Tree && !t.Path.StartsWith("Library"))
+                .Where(t => t.TargetType is TreeEntryTargetType.Tree)
                 .Select(entry => CreateNodeFromTree((entry.Target as Tree)!, entry.Path, owner, generation + 1))
                 .ToArray();
 
@@ -146,6 +168,39 @@ namespace Weaver
         public void Dispose()
         {
             _repo.Dispose();
+        }
+
+        public enum LoadType
+        {
+            /// <summary>
+            /// Loads the repository synchronously on the thread the load method was called on. For smaller repos, this is the fastest.
+            /// </summary>
+            Synchronous,
+            
+            /// <summary>
+            /// Loads the repository parallel using all available threads. For medium sized repositories, this can potentially be faster.
+            /// </summary>
+            Parallel,
+            
+            /// <summary>
+            /// Loads the repository synchronously, but doesn't build the node until it is accessed.
+            /// </summary>
+            LazyLoaded,
+            
+            /// <summary>
+            /// Loads the repository parallel using all available threads to calculate the initial objects,
+            /// then will load any subsequent node accesses synchronously when accessed. Best option for large repositories
+            /// with light nesting and many commits.
+            /// </summary>
+            ParallelLazyLoaded,
+            
+            /// <summary>
+            /// Loads the repository synchronously. While building a snapshot, it'll compare to the previous snapshot.
+            /// If the node or item is the same, the reference from the previous will get copied to the current.
+            /// Uses the least amount of memory. Best option for large repositories.
+            /// </summary>
+            SynchronousLookBehind
+            
         }
     }
 }
