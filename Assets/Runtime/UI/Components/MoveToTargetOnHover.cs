@@ -5,7 +5,7 @@ using UnityEngine.EventSystems;
 
 namespace Weaver.UI.Components
 {
-    public class MoveToTargetOnHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+    public sealed class MoveToTargetOnHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     {
         [SerializeField]
         private float _movementTime = 0.5f;
