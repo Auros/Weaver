@@ -1,7 +1,6 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 
-namespace Weaver.Runtime.Utilities
+namespace Weaver.Utilities
 {
     [RequireComponent(typeof(Renderer))]
     public class AddPropertyBlock : MonoBehaviour
