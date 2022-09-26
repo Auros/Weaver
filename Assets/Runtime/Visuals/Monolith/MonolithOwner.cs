@@ -83,6 +83,14 @@ namespace Weaver.Visuals.Monolith
             TweenIn();
         }
 
+        private void OnEnable()
+        {
+            if (_tweeningController == null)
+                return;
+            
+            TweenIn();
+        }
+
         private void TweenIn()
         {
             _tweeningController.AddTween(

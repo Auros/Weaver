@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using LibGit2Sharp;
@@ -18,9 +19,9 @@ namespace Weaver
         /// <summary>
         /// The snapshots associated with this weaver. This is guaranteed to contain at least one element.
         /// </summary>
-        public WeaverSnapshot[] Snapshots { get; private set; }
+        public WeaverSnapshot[] Snapshots { get; }
 
-        private Repository _repo;
+        private readonly Repository _repo;
 
         private WeaverAssembler(int size, Repository repo)
         {
@@ -28,7 +29,7 @@ namespace Weaver
             Snapshots = new WeaverSnapshot[size];
         }
         
-        public static async UniTask<WeaverAssembler> Create(string filePath, LoadType loadType = LoadType.Synchronous)
+        public static async UniTask<WeaverAssembler> Create(string filePath, LoadType loadType = LoadType.Synchronous, IProgress<float>? progress = null, CancellationToken token = default, int chunkCount = 0)
         {
             var sw = Stopwatch.StartNew();
             
@@ -42,12 +43,24 @@ namespace Weaver
             var startTime = commits[0].Committer.When.ToUnixTimeSeconds();
             var endTime = commits[^1].Committer.When.ToUnixTimeSeconds();
 
+            int snapshotsBuilt = 0;
+            int size = assembler.Snapshots.Length;
+            
+            void Report()
+            {
+                progress?.Report(snapshotsBuilt * 1.0f / size);
+            }
+
             // Generate every snapshot from each commit
             switch (loadType)
             {
                 case LoadType.Synchronous:
                     for (int i = 0; i < assembler.Snapshots.Length; i++)
+                    {
                         assembler.Snapshots[i] = GenerateSnapshotFromCommit(commits[i], null, false, ref startTime, ref endTime);
+                        snapshotsBuilt++;
+                        Report();
+                    }
                     break;
                 case LoadType.Parallel:
                     var result = Parallel.ForEach(Enumerable.Range(0, assembler.Snapshots.Length), i =>
@@ -61,14 +74,20 @@ namespace Weaver
                             // ReSharper disable once AccessToModifiedClosure
                             ref endTime
                         );
+                        snapshotsBuilt++;
+                        Report();
                     });
     
-                    while (!result.IsCompleted)
-                        await UniTask.NextFrame();
+                    while (!result.IsCompleted && !token.IsCancellationRequested)
+                        await UniTask.NextFrame(token);
                     break;
                 case LoadType.LazyLoaded:
                     for (int i = 0; i < assembler.Snapshots.Length; i++)
+                    {
                         assembler.Snapshots[i] = GenerateSnapshotFromCommit(commits[i], null, true, ref startTime, ref endTime);
+                        snapshotsBuilt++;
+                        Report();
+                    }
                     break;
                 case LoadType.ParallelLazyLoaded:
                     var resultLazyLoaded = Parallel.ForEach(Enumerable.Range(0, assembler.Snapshots.Length), i =>
@@ -82,14 +101,83 @@ namespace Weaver
                             // ReSharper disable once AccessToModifiedClosure
                             ref endTime
                         );
+                        snapshotsBuilt++;
+                        Report();
                     });
-                    while (!resultLazyLoaded.IsCompleted)
-                        await UniTask.NextFrame();
+                    while (!resultLazyLoaded.IsCompleted && !token.IsCancellationRequested)
+                        await UniTask.NextFrame(token);
                     break;
                 case LoadType.SynchronousLookBehind:
                     WeaverSnapshot? previous = null;
                     for (int i = 0; i < assembler.Snapshots.Length; i++)
+                    {
                         previous = assembler.Snapshots[i] = GenerateSnapshotFromCommit(commits[i], previous, false, ref startTime, ref endTime);
+                        snapshotsBuilt++;
+                        Report();
+                    }
+                    break;
+                case LoadType.ParallelChunkatedLookBehind:
+
+                    if (0 >= chunkCount)
+                        chunkCount = Environment.ProcessorCount / 2;
+
+                    List<Commit[]> chunks = new();
+                    int itemsPerChunk = size / chunkCount;
+                    int extra = size % chunkCount;
+                    
+                    for (int i = 0; i < chunkCount; i++)
+                    {
+                        if (i != 0)
+                            _ = true;
+                        
+                        var chunk = new Commit[itemsPerChunk];
+                        var startIndex = itemsPerChunk * i;
+                        for (int c = startIndex; c < itemsPerChunk + startIndex; c++)
+                            chunk[c - startIndex] = commits[c];
+                        chunks.Add(chunk);
+                    }
+                    
+                    // If we were unable to chunk into an even amount of items,
+                    // Add the remaining items.
+                    // I could have combined this logic into the for loop above,
+                    // however, I wanted this to be readable :P
+                    if (extra != 0)
+                    {
+                        var extraChunk = new Commit[extra];
+                        int startIndex = itemsPerChunk * chunkCount;
+                        for (int i = startIndex; i < size; i++)
+                            extraChunk[i - startIndex] = commits[i];
+                        chunks.Add(extraChunk);
+                    }
+                    
+                    // Push each chunk onto a thread and let it process and load the data into the main snapshots array.
+                    var chunkatedResult = Parallel.ForEach(
+                        chunks.Select((localCommits, index)
+                            => new { Commits = localCommits, Index = index }), 
+                        chunk =>
+                        {
+                            try
+                            {
+                                WeaverSnapshot? chunkatedPrevious = null;
+                                int startIndex = itemsPerChunk * chunk.Index;
+                                for (int i = 0; i < chunk.Commits.Length; i++)
+                                {
+                                    chunkatedPrevious = assembler.Snapshots[i + startIndex] =
+                                        GenerateSnapshotFromCommit(chunk.Commits[i], chunkatedPrevious, false,
+                                            ref startTime, ref endTime);
+                                    snapshotsBuilt++;
+                                    Report();
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                _ = e;
+                            }
+                        });
+    
+                    while (!chunkatedResult.IsCompleted && !token.IsCancellationRequested)
+                        await UniTask.NextFrame(token);
+                    
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(loadType), loadType, null);
@@ -178,7 +266,7 @@ namespace Weaver
             Synchronous,
             
             /// <summary>
-            /// Loads the repository parallel using all available threads. For medium sized repositories, this can potentially be faster.
+            /// Loads the repository asynchronously using all available threads. For medium sized repositories, this can potentially be faster.
             /// </summary>
             Parallel,
             
@@ -188,7 +276,7 @@ namespace Weaver
             LazyLoaded,
             
             /// <summary>
-            /// Loads the repository parallel using all available threads to calculate the initial objects,
+            /// Loads the repository asynchronously using all available threads to calculate the initial objects,
             /// then will load any subsequent node accesses synchronously when accessed. Best option for large repositories
             /// with light nesting and many commits.
             /// </summary>
@@ -199,8 +287,13 @@ namespace Weaver
             /// If the node or item is the same, the reference from the previous will get copied to the current.
             /// Uses the least amount of memory. Best option for large repositories.
             /// </summary>
-            SynchronousLookBehind
+            SynchronousLookBehind,
             
+            /// <summary>
+            /// Loads the repository asynchronously by trying to split commits into even chunks, then performing a look behind
+            /// operation on each chunk. Best option for super-large repositories.
+            /// </summary>
+            ParallelChunkatedLookBehind
         }
     }
 }

@@ -53,6 +53,7 @@ namespace Weaver.Scopes
                 Lifetime.Singleton);
 
             var options = builder.RegisterMessagePipe();
+            builder.RegisterMessageBroker<string, float>(options);
             builder.RegisterMessageBroker<WeaverAssembler?>(options);
             builder.RegisterMessageBroker<string, WeaverNode>(options);
             builder.RegisterMessageBroker<string, WeaverItemEvent>(options);

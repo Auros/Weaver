@@ -7,5 +7,6 @@
         public const string ItemChanged = "weaver.item.changed";
         public const string ItemDestroyed = "weaver.item.destroyed";
         public const string ItemCreated = "weaver.item.created";
+        public const string LoadingProgress = "weaver.loading.progress";
     }
 }
