@@ -20,8 +20,8 @@ namespace Weaver.Utilities
         [Inject]
         private IClock _clock = null!;
 
-        [SerializeField]
-        private string _repositoryPath = string.Empty;
+        [field: SerializeField]
+        public string RepositoryPath { get; set; }= string.Empty;
 
         [SerializeField]
         private bool _resetTimeOnChange;
@@ -46,18 +46,18 @@ namespace Weaver.Utilities
                 _progressPublisher.Publish(WeaverEventKeys.LoadingProgress, _progress);
             _progressLastFrame = _progress;
             
-            if (_valueLastFrame == _repositoryPath)
+            if (_valueLastFrame == RepositoryPath)
                 return;
             
             _cts.Cancel();
             _cts = new CancellationTokenSource();
-            _valueLastFrame = _repositoryPath;
+            _valueLastFrame = RepositoryPath;
             
             _ = UniTask.RunOnThreadPool(async () =>
             {
                 var cts = _cts;
-                var repo = _repositoryPath;
-                if (!_repositoryPath.EndsWith("\\.git"))
+                var repo = RepositoryPath;
+                if (!RepositoryPath.EndsWith("\\.git"))
                     repo += "\\.git";
 
                 // Build the weaver assembler on a separate thread.

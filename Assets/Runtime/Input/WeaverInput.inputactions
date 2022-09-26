@@ -1,0 +1,34 @@
+{
+    "name": "WeaverInput",
+    "maps": [
+        {
+            "name": "Main",
+            "id": "3892a60a-7c3c-41d6-bbbe-dc3d1597d188",
+            "actions": [
+                {
+                    "name": "ToggleUI",
+                    "type": "Button",
+                    "id": "7a37124c-f8de-43e8-9db6-b5230c555ff5",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "a5976570-c6be-4dc3-991a-7cf6d94985de",
+                    "path": "<Keyboard>/tab",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToggleUI",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}

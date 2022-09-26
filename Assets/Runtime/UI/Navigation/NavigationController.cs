@@ -23,6 +23,8 @@ namespace Weaver.UI.Navigation
         
         private NavigationPanel? _activePanel;
 
+        public bool HasPanel => _activePanel;
+
         private void Start()
         {
             for (int i = 0; i < _panels.Length; i++)
@@ -71,17 +73,20 @@ namespace Weaver.UI.Navigation
             _activePanel = panel;
         }
 
-        public void Hide()
+        public void Hide(bool self = false)
         {
             // There's nothing to hide is there's nothing active.
             if (_activePanel == null)
                 return;
 
             var activePanel = _activePanel;
+            _activePanel = null;
             
             AnimatePanelOut(activePanel, () =>
             {
                 activePanel.gameObject.SetActive(false);
+                if (self)
+                    gameObject.SetActive(false);
             });
         }
 
