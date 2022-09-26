@@ -8,11 +8,16 @@ namespace Weaver.UI.Navigation
         [field: SerializeField]
         public string Id { get; private set; } = string.Empty;
 
-        public CanvasGroup Canvas { get; private set; } = null!;
-        
-        private void Awake()
+        private CanvasGroup _canvasGroup = null!;
+
+        public CanvasGroup Canvas
         {
-            Canvas = GetComponent<CanvasGroup>();
+            get
+            {
+                if (_canvasGroup == null)
+                    _canvasGroup = GetComponent<CanvasGroup>();
+                return _canvasGroup;
+            }
         }
     }
 }
