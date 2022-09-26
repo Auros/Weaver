@@ -5,7 +5,7 @@ using UnityEngine;
 using VContainer;
 using Weaver.Models;
 
-namespace Weaver
+namespace Weaver.UI
 {
     public class ProgressReporter : MonoBehaviour
     {
