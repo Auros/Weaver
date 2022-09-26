@@ -823,9 +823,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f1fa058ed6de4bbcb27e080232fa52b1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _repositoryPath: P:\Development\Various Forks\osu
+  _repositoryPath: P:\Development\Beat Saber\Mods\Emoter
   _resetTimeOnChange: 1
-  _loadType: 5
+  _loadType: 4
   _chunks: 20
 --- !u!1 &476054963
 GameObject:
@@ -1545,7 +1545,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3df5290dc33c0ab4aa99c108a0e13287, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _upperBound: 300
+  _upperBound: 60
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
