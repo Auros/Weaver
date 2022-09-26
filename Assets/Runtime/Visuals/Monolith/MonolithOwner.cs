@@ -11,7 +11,7 @@ using Random = UnityEngine.Random;
 
 namespace Weaver.Visuals.Monolith
 {
-    public class MonolithOwner : MonoBehaviour
+    public sealed class MonolithOwner : MonoBehaviour
     {
         [Inject]
         private readonly TweeningController _tweeningController = null!;

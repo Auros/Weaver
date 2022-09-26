@@ -15,7 +15,7 @@ namespace Weaver.Tweening
     /// types Weaver needs at the moment. In the future, I plan on writing my own tweening library and putting
     /// it on OpenUPM, but for the time being, this will do.
     /// </summary>
-    public class TweeningController : MonoBehaviour
+    public sealed class TweeningController : MonoBehaviour
     {
         [Inject]
         private readonly IObjectPool<TweenContext> _contextPool = null!;

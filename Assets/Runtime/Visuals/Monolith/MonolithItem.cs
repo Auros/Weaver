@@ -5,7 +5,7 @@ using Weaver.Tweening;
 
 namespace Weaver.Visuals.Monolith
 {
-    public class MonolithItem : MonoBehaviour
+    public sealed class MonolithItem : MonoBehaviour
     {
         [Inject]
         private readonly TweeningController _tweeningController = null!;

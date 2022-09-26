@@ -11,7 +11,7 @@ using Weaver.Visuals.Utilities;
 namespace Weaver.Visuals.Monolith
 {
     [PublicAPI]
-    public class MonolithNode : MonoBehaviour
+    public sealed class MonolithNode : MonoBehaviour
     {
         [Inject]
         private TweeningController _tweeningController = null!;

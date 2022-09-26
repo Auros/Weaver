@@ -4,7 +4,7 @@ using UnityEngine.Pool;
 
 namespace Weaver.Visuals.Utilities
 {
-    public class SphereGenerator : MonoBehaviour
+    public sealed class SphereGenerator : MonoBehaviour
     {
         [SerializeField]
         private SphereItem _pointPrefab = null!;

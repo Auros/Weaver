@@ -9,7 +9,7 @@ using Weaver.Models;
 
 namespace Weaver.Utilities
 {
-    public class AutomaticRepositoryAssigner : MonoBehaviour, IProgress<float>
+    public sealed class AutomaticRepositoryAssigner : MonoBehaviour, IProgress<float>
     {
         [Inject]
         private IPublisher<WeaverAssembler?> _assemblerPublisher = null!;

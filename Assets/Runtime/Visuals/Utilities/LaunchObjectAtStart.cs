@@ -4,7 +4,7 @@ using Random = UnityEngine.Random;
 
 namespace Weaver.Visuals.Utilities
 {
-    public class LaunchObjectAtStart : MonoBehaviour
+    public sealed class LaunchObjectAtStart : MonoBehaviour
     {
         [SerializeField]
         private Transform _from = null!;

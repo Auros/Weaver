@@ -6,7 +6,7 @@ namespace Weaver.Visuals.Monolith
     /// Monolith Actions are used to store information on node items.
     /// Instead of using nullables, we just use an IsValid method.
     /// </summary>
-    public class MonolithAction
+    public sealed class MonolithAction
     {
         public MonolithActionType Type { get; set; } = MonolithActionType.None;
         

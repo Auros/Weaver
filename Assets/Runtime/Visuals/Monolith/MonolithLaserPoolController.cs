@@ -1,8 +1,6 @@
-﻿using UnityEngine;
-
-namespace Weaver.Visuals.Monolith
+﻿namespace Weaver.Visuals.Monolith
 {
-    public class MonolithLaserPoolController : InjectablePoolController<MonolithLaser>
+    public sealed class MonolithLaserPoolController : InjectablePoolController<MonolithLaser>
     {
         
     }

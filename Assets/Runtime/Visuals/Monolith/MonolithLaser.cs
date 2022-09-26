@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Weaver.Visuals.Monolith
 {
-    public class MonolithLaser : MonoBehaviour
+    public sealed class MonolithLaser : MonoBehaviour
     {
         [SerializeField]
         private LineRenderer _line = null!;

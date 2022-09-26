@@ -2,7 +2,7 @@
 
 namespace Weaver.Visuals.Utilities
 {
-    public class EnableGameObjectOnStart : MonoBehaviour
+    public sealed class EnableGameObjectOnStart : MonoBehaviour
     {
         [SerializeField]
         private GameObject _gameObject = null!;

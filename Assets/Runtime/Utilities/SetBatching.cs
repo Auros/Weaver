@@ -3,7 +3,7 @@ using UnityEngine.Rendering;
 
 namespace Weaver.Utilities
 {
-    public class SetBatching : MonoBehaviour
+    public sealed class SetBatching : MonoBehaviour
     {
         [SerializeField]
         private bool _value = true;

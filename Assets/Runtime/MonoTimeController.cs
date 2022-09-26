@@ -3,7 +3,7 @@ using Weaver.Models;
 
 namespace Weaver
 {
-    public class MonoTimeController : MonoBehaviour, IClock
+    public sealed class MonoTimeController : MonoBehaviour, IClock
     {
         [SerializeField]
         private float _upperBound = 10f;

@@ -9,7 +9,7 @@ using Weaver.Visuals.Monolith;
 
 namespace Weaver.Scopes
 {
-    public class WeaverLifetimeScope : LifetimeScope
+    public sealed class WeaverLifetimeScope : LifetimeScope
     {
         [SerializeField]
         private TweeningController _tweeningController = null!;

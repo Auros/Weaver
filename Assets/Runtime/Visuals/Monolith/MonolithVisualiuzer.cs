@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Cinemachine;
 using MessagePipe;
 using UnityEngine;
@@ -13,7 +12,7 @@ namespace Weaver.Visuals.Monolith
     /// <summary>
     /// In this Weaver visualizer, 
     /// </summary>
-    public class MonolithVisualiuzer : MonoBehaviour
+    public sealed class MonolithVisualiuzer : MonoBehaviour
     {
         [Inject]
         private readonly ISubscriber<string, WeaverNode> _nodeEventSubscriber = null!;

@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Weaver.Utilities
 {
-    public class DisplayFPS : MonoBehaviour
+    public sealed class DisplayFPS : MonoBehaviour
     {
         [SerializeField]
         private TMP_Text _text = null!;

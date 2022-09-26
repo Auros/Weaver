@@ -2,7 +2,7 @@
 
 namespace Weaver.Visuals.Utilities
 {
-    public class SphereItem : MonoBehaviour
+    public sealed class SphereItem : MonoBehaviour
     {
         [field: SerializeField, Min(0.1f)]
         public float Radius { get; private set; } = 1f;

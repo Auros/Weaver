@@ -3,7 +3,7 @@
 namespace Weaver.Utilities
 {
     [RequireComponent(typeof(Renderer))]
-    public class AddPropertyBlock : MonoBehaviour
+    public sealed class AddPropertyBlock : MonoBehaviour
     {
         private void Awake()
         {

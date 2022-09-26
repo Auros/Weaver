@@ -2,7 +2,7 @@
 
 namespace Weaver.Visuals.Monolith
 {
-    public class MonolithOwnerPoolController : InjectablePoolController<MonolithOwner>
+    public sealed class MonolithOwnerPoolController : InjectablePoolController<MonolithOwner>
     {
         [Inject]
         private new readonly IObjectResolver _container = null!;

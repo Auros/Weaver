@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Weaver.Visuals.Utilities
 {   
-    public class DisableGameObjectOnStart : MonoBehaviour
+    public sealed class DisableGameObjectOnStart : MonoBehaviour
     {
         [SerializeField]
         private GameObject _gameObject = null!;
