@@ -181,7 +181,7 @@ namespace Weaver.Visuals.Monolith
                 physicalTransform.localRotation = Quaternion.identity;
             }
             
-            _cinemachineTargetGroup.AddMember(physical.transform, 1f, 20f);
+            _cinemachineTargetGroup.AddMember(physical.transform, 1f, 5f);
             _physicalNodes.Add(node.Name, physical);
             return physical;
         }

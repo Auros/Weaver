@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using ElRaccoone.Tweens.Core;
+using SmartImage;
 using UnityEngine;
 using UnityEngine.Pool;
 using VContainer;
@@ -13,6 +16,9 @@ namespace Weaver.Visuals.Monolith
 {
     public sealed class MonolithOwner : MonoBehaviour
     {
+        [Inject]
+        private readonly SmartImageManager _smartImageManager = null!;
+        
         [Inject]
         private readonly TweeningController _tweeningController = null!;
         
@@ -63,6 +69,9 @@ namespace Weaver.Visuals.Monolith
 
         [SerializeField]
         private float _postDeactivationLifetime = 2f;
+
+        [SerializeField]
+        private Renderer _renderer = null!;
         
         private bool _deactivating;
         private System.Random? _random;
@@ -75,6 +84,12 @@ namespace Weaver.Visuals.Monolith
         private readonly List<MonolithAction> _actions = new();
         private readonly List<MonolithLaser> _activeLasers = new();
 
+        private CancellationTokenSource? _cts = new();
+        private static readonly int _textureId = Shader.PropertyToID("_BaseMap");
+        private static readonly int _emissionMapId = Shader.PropertyToID("_EmissionMap");
+
+        private static readonly ImageLoadingOptions _imageOptions = new();
+        
         [field: SerializeField]
         public string Id { get; private set; } = string.Empty;
 
@@ -89,6 +104,11 @@ namespace Weaver.Visuals.Monolith
                 return;
             
             TweenIn();
+        }
+
+        private void OnDisable()
+        {
+            _cts?.Cancel();
         }
 
         private void TweenIn()
@@ -311,9 +331,30 @@ namespace Weaver.Visuals.Monolith
 
         public void SetData(string id, System.Random random, Action<MonolithOwner>? onDeactivation)
         {
+            var previousId = Id;
+            
             Id = id;
             _random = random;
             _onDeactivation = onDeactivation;
+
+            // We don't need to reload the image if the id hasn't changed.
+            if (previousId == Id)
+                return;
+            
+            _cts?.Cancel();
+            _cts = new CancellationTokenSource();
+            
+            _renderer.material.SetTexture(_textureId, null);
+            _renderer.material.SetTexture(_emissionMapId, null);
+            UniTask.Void(async () =>
+            {
+                var sprite = await _smartImageManager.LoadAsync(Id, _imageOptions, _cts.Token);
+                if (sprite == null)
+                    return;
+                
+                _renderer.material.SetTexture(_textureId, sprite.Active.Texture);
+                _renderer.material.SetTexture(_emissionMapId, sprite.Active.Texture);
+            });
         }
     }
 }

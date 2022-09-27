@@ -46,7 +46,8 @@
     "com.unity.modules.video": "1.0.0",
     "com.unity.modules.vr": "1.0.0",
     "com.unity.modules.wind": "1.0.0",
-    "com.unity.modules.xr": "1.0.0"
+    "com.unity.modules.xr": "1.0.0",
+    "dev.auros.smartimage": "0.0.1-beta"
   },
   "scopedRegistries": [
     {
@@ -57,8 +58,15 @@
         "com.cysharp.messagepipe.vcontainer",
         "com.cysharp.unitask",
         "com.openupm",
+        "dev.auros.smartimage",
         "jp.hadashikick.vcontainer",
-        "nl.elraccoone.tweens"
+        "nl.elraccoone.tweens",
+        "org.nuget.sixlabors.imagesharp",
+        "org.nuget.system.buffers",
+        "org.nuget.system.memory",
+        "org.nuget.system.numerics.vectors",
+        "org.nuget.system.runtime.compilerservices.unsafe",
+        "org.nuget.system.text.encoding.codepages"
       ]
     }
   ]

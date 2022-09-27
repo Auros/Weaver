@@ -1,4 +1,5 @@
 using MessagePipe;
+using SmartImage;
 using UnityEngine;
 using UnityEngine.Pool;
 using VContainer;
@@ -11,6 +12,9 @@ namespace Weaver.Scopes
 {
     public sealed class WeaverLifetimeScope : LifetimeScope
     {
+        [SerializeField]
+        private SmartImageManager _smartImageManager = null!;
+        
         [SerializeField]
         private TweeningController _tweeningController = null!;
         
@@ -34,6 +38,7 @@ namespace Weaver.Scopes
             builder.RegisterEntryPoint<WeaverStateDaemon>();
             builder.RegisterComponent<IClock>(_monoTimeController);
 
+            builder.RegisterComponent(_smartImageManager);
             builder.RegisterComponent(_tweeningController);
             builder.RegisterComponent(_itemPoolController);
             builder.RegisterComponent(_nodePoolController);
